@@ -18,7 +18,16 @@
       "WebFetch(domain:localhost)",
       "Bash(git commit:*)",
       "WebFetch(domain:yeonghoon.kim)",
-      "Bash(wget:*)"
+      "Bash(wget:*)",
+      "Bash(git config:*)",
+      "Bash(node:*)",
+      "Bash(adb:*)",
+      "Bash(python3:*)",
+      "Bash(ip addr:*)",
+      "Bash(lsof:*)",
+      "Bash(xargs kill:*)",
+      "Bash(exiftool:*)",
+      "mcp__ide__getDiagnostics"
     ],
     "deny": [],
     "ask": []
