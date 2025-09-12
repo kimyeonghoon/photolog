@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { HomePage } from './pages/HomePage'
 import { UploadPage } from './pages/UploadPage'
+import { TestPage } from './pages/TestPage'
 import { MapView } from './components/MapView'
 import './App.css'
 import './components/PhotoUpload.css'
@@ -32,7 +33,7 @@ interface StoredPhotoData extends PhotoUploadData {
 
 function App() {
   const [uploadedPhotos, setUploadedPhotos] = useState<StoredPhotoData[]>([])
-  const [currentPage, setCurrentPage] = useState<'home' | 'upload' | 'map'>('home')
+  const [currentPage, setCurrentPage] = useState<'home' | 'upload' | 'map' | 'test'>('home')
 
   const handleUpload = (data: PhotoUploadData) => {
     console.log('업로드된 사진 데이터:', data)
@@ -67,6 +68,10 @@ function App() {
     setCurrentPage('map')
   }
 
+  const handleTestClick = () => {
+    setCurrentPage('test')
+  }
+
   return (
     <div className="app">
       {currentPage === 'home' ? (
@@ -74,6 +79,7 @@ function App() {
           photos={uploadedPhotos}
           onUploadClick={handleUploadClick}
           onMapClick={handleMapClick}
+          onTestClick={handleTestClick}
         />
       ) : currentPage === 'upload' ? (
         <UploadPage 
@@ -81,6 +87,16 @@ function App() {
           onError={handleError}
           onBackClick={handleBackClick}
         />
+      ) : currentPage === 'test' ? (
+        <div className="test-page">
+          <header className="test-header">
+            <button onClick={handleBackClick} className="back-button">
+              ← 돌아가기
+            </button>
+            <h1>🧪 테스트</h1>
+          </header>
+          <TestPage />
+        </div>
       ) : (
         <div className="map-page">
           <header className="map-header">

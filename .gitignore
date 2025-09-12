@@ -37,3 +37,6 @@ config/secrets.json
 # OS generated files
 Thumbs.db
 ehthumbs.db
+
+# Sample images
+public/sample-images/

@@ -22,9 +22,10 @@ interface HomePageProps {
   photos: StoredPhotoData[];
   onUploadClick: () => void;
   onMapClick: () => void;
+  onTestClick?: () => void;
 }
 
-export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMapClick }) => {
+export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMapClick, onTestClick }) => {
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
 
@@ -125,6 +126,15 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
           >
             📍 지도 보기
           </button>
+          {onTestClick && (
+            <button 
+              onClick={onTestClick}
+              className="test-button-header"
+              style={{ backgroundColor: '#10b981' }}
+            >
+              🧪 테스트
+            </button>
+          )}
           <button 
             onClick={onUploadClick}
             className="upload-button-header"
