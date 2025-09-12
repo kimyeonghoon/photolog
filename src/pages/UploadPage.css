@@ -1,0 +1,168 @@
+.upload-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+/* Header */
+.upload-page-header {
+  text-align: center;
+  padding: 30px 20px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  position: relative;
+}
+
+.back-button {
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.back-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-50%) translateX(-2px);
+}
+
+.upload-page-header h1 {
+  font-size: 2rem;
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+.upload-page-header p {
+  font-size: 1rem;
+  opacity: 0.9;
+}
+
+/* Main Content */
+.upload-page-main {
+  padding: 40px 20px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.upload-container {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 30px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  max-width: 600px;
+  width: 100%;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+/* Override PhotoUpload styles for better integration */
+.upload-container .photo-upload {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  font-family: inherit;
+}
+
+.upload-container .upload-area {
+  border-color: rgba(255, 255, 255, 0.3);
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.upload-container .upload-area:hover {
+  border-color: rgba(255, 255, 255, 0.5);
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.upload-container .upload-button {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: white;
+}
+
+.upload-container .upload-button:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+.upload-container .camera-button {
+  background-color: rgba(40, 167, 69, 0.7);
+  border-color: rgba(40, 167, 69, 0.8);
+}
+
+.upload-container .camera-button:hover:not(:disabled) {
+  background-color: rgba(40, 167, 69, 0.9);
+}
+
+.upload-container .final-upload-button {
+  background-color: rgba(40, 167, 69, 0.8);
+}
+
+.upload-container .final-upload-button:hover:not(:disabled) {
+  background-color: rgba(40, 167, 69, 1);
+}
+
+.upload-container .description-input {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: white;
+}
+
+.upload-container .description-input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.upload-container .description-input:focus {
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+}
+
+.upload-container .description-area label {
+  color: white;
+}
+
+.upload-container .exif-info {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.upload-container .exif-info h3 {
+  color: white;
+}
+
+.upload-container .exif-info p {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .upload-page-header {
+    padding: 20px 16px;
+  }
+  
+  .back-button {
+    left: 16px;
+    font-size: 12px;
+    padding: 6px 12px;
+  }
+  
+  .upload-page-header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .upload-page-main {
+    padding: 20px 16px;
+  }
+  
+  .upload-container {
+    padding: 20px;
+    border-radius: 16px;
+  }
+}
