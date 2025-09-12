@@ -307,13 +307,14 @@ export const canCreateThumbnail = (file: File): { canCreate: boolean; reason?: s
     }
     
     // 메모리 제약 확인 (대략적인 추정)
-    const navigator = window.navigator as any;
+    const navigator = window.navigator as Navigator & { deviceMemory?: number };
     if (navigator.deviceMemory && navigator.deviceMemory < 2) {
       return { canCreate: false, reason: '디바이스 메모리가 부족합니다.' };
     }
 
     return { canCreate: true };
-  } catch (error) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (_) {
     return { canCreate: false, reason: 'Canvas API 초기화에 실패했습니다.' };
   }
 };

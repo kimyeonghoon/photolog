@@ -21,7 +21,7 @@ interface PhotoUploadData {
   };
   exifData?: {
     timestamp?: string;
-    [key: string]: any;
+    [key: string]: string | number | boolean | undefined;
   };
 }
 

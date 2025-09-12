@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './MapView.css';
@@ -19,7 +19,7 @@ interface PhotoData {
   uploadedAt: Date;
   exifData?: {
     timestamp?: string;
-    [key: string]: any;
+    [key: string]: string | number | boolean | undefined;
   };
 }
 
@@ -63,7 +63,8 @@ export const MapView: React.FC<MapViewProps> = ({ className, photos = [] }) => {
     if (photo.exifData?.timestamp) {
       try {
         return new Date(photo.exifData.timestamp);
-      } catch (e) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (_) {
         console.warn('EXIF timestamp 파싱 실패:', photo.exifData.timestamp);
       }
     }
@@ -78,7 +79,7 @@ export const MapView: React.FC<MapViewProps> = ({ className, photos = [] }) => {
   };
 
   // 날짜별 사진 그룹핑 함수 (촬영 시간 기준)
-  const groupPhotosByDate = (photos: PhotoData[]) => {
+  const groupPhotosByDate = useCallback((photos: PhotoData[]) => {
     const groups: { [date: string]: PhotoData[] } = {};
     
     photos.forEach(photo => {
@@ -101,7 +102,7 @@ export const MapView: React.FC<MapViewProps> = ({ className, photos = [] }) => {
     });
 
     return groups;
-  };
+  }, []);
 
   // 사진 마커 및 경로 업데이트
   useEffect(() => {
@@ -261,10 +262,10 @@ export const MapView: React.FC<MapViewProps> = ({ className, photos = [] }) => {
 
     // 지도를 모든 마커가 보이도록 조정
     if (photosWithLocation.length > 0) {
-      const group = new L.featureGroup(markersRef.current);
+      const group = new L.FeatureGroup(markersRef.current);
       map.fitBounds(group.getBounds().pad(0.1));
     }
-  }, [photos, showRoutes]);
+  }, [photos, showRoutes, groupPhotosByDate]);
 
   return (
     <div className={`map-container ${className || ''}`}>

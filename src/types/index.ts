@@ -5,7 +5,7 @@ export interface ExifData {
   timestamp?: string;
   camera?: string;
   lens?: string;
-  [key: string]: any;
+  [key: string]: string | number | boolean | undefined;
 }
 
 // 업로드 관련 타입
@@ -33,7 +33,7 @@ export interface Photo {
     camera?: string;
     lens?: string;
     timestamp?: string;
-    [key: string]: any;
+    [key: string]: string | number | boolean | undefined;
   };
   createdAt: string;
   updatedAt: string;

@@ -25,7 +25,7 @@ interface ExifData {
   timestamp?: string;
   camera?: string;
   lens?: string;
-  [key: string]: any;
+  [key: string]: string | number | boolean | undefined;
 }
 
 interface PhotoUploadProps {
@@ -185,7 +185,8 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onUpload, onError }) =
       setState(prev => ({ ...prev, progress: 80 }));
 
       setState(prev => ({ ...prev, progress: 100, isUploading: false }));
-    } catch (error) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (_) {
       const errorMessage = '파일 처리 중 오류가 발생했습니다.';
       setState(prev => ({ ...prev, error: errorMessage, isUploading: false }));
       onError(errorMessage);
