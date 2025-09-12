@@ -1,3 +1,23 @@
+// EXIF 데이터 타입
+export interface ExifData {
+  latitude?: number;
+  longitude?: number;
+  timestamp?: string;
+  camera?: string;
+  lens?: string;
+  [key: string]: any;
+}
+
+// 업로드 관련 타입
+export interface PhotoUploadData {
+  file: File;
+  description: string;
+  location?: {
+    latitude: number;
+    longitude: number;
+  };
+}
+
 // 사진 관련 타입 정의
 export interface Photo {
   id: string;
@@ -17,24 +37,4 @@ export interface Photo {
   };
   createdAt: string;
   updatedAt: string;
-}
-
-// EXIF 데이터 타입
-export interface ExifData {
-  latitude?: number;
-  longitude?: number;
-  timestamp?: string;
-  camera?: string;
-  lens?: string;
-  [key: string]: any;
-}
-
-// 업로드 관련 타입
-export interface PhotoUploadData {
-  file: File;
-  description: string;
-  location?: {
-    latitude: number;
-    longitude: number;
-  };
 }
