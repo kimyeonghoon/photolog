@@ -71,22 +71,66 @@ export const MapView: React.FC<MapViewProps> = ({ className, photos = [] }) => {
     photosWithLocation.forEach((photo, index) => {
       if (!photo.location) return;
 
-      // 커스텀 아이콘 생성
+      // 커스텀 아이콘 생성 (미니 썸네일 포함)
       const photoIcon = L.divIcon({
         className: 'photo-marker',
         html: `
-          <div class="photo-marker-content">
-            <span class="photo-marker-icon">📸</span>
+          <div class="photo-marker-content" data-photo-index="${index}">
+            <div class="photo-marker-thumbnail">
+              ${photo.thumbnail 
+                ? `<img src="${photo.thumbnail.dataUrl}" alt="${photo.description}" />` 
+                : `<div class="photo-marker-fallback">📸</div>`
+              }
+            </div>
+            <div class="photo-marker-border"></div>
             <span class="photo-marker-count">${index + 1}</span>
           </div>
         `,
-        iconSize: [40, 40],
-        iconAnchor: [20, 40]
+        iconSize: [50, 60],
+        iconAnchor: [25, 60]
       });
 
       const marker = L.marker([photo.location.latitude, photo.location.longitude], {
         icon: photoIcon
       }).addTo(map);
+
+      // 마커 이벤트 추가 (호버 및 선택)
+      marker.on('mouseover', function() {
+        const markerElement = marker.getElement();
+        if (markerElement) {
+          markerElement.classList.add('marker-hover');
+          // 툴팁 표시
+          const tooltipContent = photo.description || '제목 없음';
+          marker.bindTooltip(tooltipContent, {
+            permanent: false,
+            direction: 'top',
+            offset: [0, -10],
+            className: 'photo-marker-tooltip'
+          }).openTooltip();
+        }
+      });
+
+      marker.on('mouseout', function() {
+        const markerElement = marker.getElement();
+        if (markerElement) {
+          markerElement.classList.remove('marker-hover');
+          marker.closeTooltip();
+        }
+      });
+
+      marker.on('click', function() {
+        // 다른 마커들의 선택 상태 제거
+        markersRef.current.forEach(m => {
+          const element = m.getElement();
+          if (element) element.classList.remove('marker-selected');
+        });
+        
+        // 현재 마커 선택 상태 추가
+        const markerElement = marker.getElement();
+        if (markerElement) {
+          markerElement.classList.add('marker-selected');
+        }
+      });
 
       // 팝업 추가
       const popupContent = `
