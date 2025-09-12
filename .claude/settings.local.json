@@ -9,7 +9,13 @@
       "Bash(npm install)",
       "Bash(npm install:*)",
       "Bash(npm run dev:*)",
-      "Bash(npm audit:*)"
+      "Bash(npm audit:*)",
+      "Bash(npm start)",
+      "Bash(npm run:*)",
+      "Bash(pkill:*)",
+      "Bash(tasklist)",
+      "Bash(findstr:*)",
+      "WebFetch(domain:localhost)"
     ],
     "deny": [],
     "ask": []

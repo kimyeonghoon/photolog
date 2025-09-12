@@ -1,5 +1,10 @@
 import React, { useState, useRef, useCallback } from 'react';
 import exifr from 'exifr';
+import { 
+  createThumbnail, 
+  canCreateThumbnail,
+  type ThumbnailResult
+} from '../utils/thumbnailGenerator';
 
 // 타입 정의
 interface PhotoUploadData {
@@ -9,6 +14,8 @@ interface PhotoUploadData {
     latitude: number;
     longitude: number;
   };
+  thumbnail?: ThumbnailResult;
+  thumbnails?: { [key: string]: ThumbnailResult };
 }
 
 interface ExifData {
@@ -33,6 +40,10 @@ interface UploadState {
   description: string;
   exifData: ExifData | null;
   error: string | null;
+  thumbnail: ThumbnailResult | null;
+  thumbnails: { [key: string]: ThumbnailResult };
+  thumbnailGenerating: boolean;
+  thumbnailError: string | null;
 }
 
 const SUPPORTED_FORMATS = ['image/jpeg', 'image/jpg', 'image/png', 'image/heic'];
@@ -47,6 +58,10 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onUpload, onError }) =
     description: '',
     exifData: null,
     error: null,
+    thumbnail: null,
+    thumbnails: {},
+    thumbnailGenerating: false,
+    thumbnailError: null,
   });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -97,6 +112,54 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onUpload, onError }) =
     }
   }, []);
 
+  const generateThumbnails = useCallback(async (file: File) => {
+    const canCreate = canCreateThumbnail(file);
+    if (!canCreate.canCreate) {
+      const errorMessage = `썸네일 생성 불가: ${canCreate.reason}`;
+      console.warn(errorMessage);
+      setState(prev => ({ 
+        ...prev, 
+        thumbnailError: errorMessage
+      }));
+      return;
+    }
+
+    setState(prev => ({ 
+      ...prev, 
+      thumbnailGenerating: true, 
+      thumbnailError: null 
+    }));
+
+    try {
+      // 300x300 썸네일 하나만 생성
+      const thumbnail = await createThumbnail(file, {
+        width: 300,
+        height: 300,
+        mode: 'crop',
+        quality: 0.8
+      });
+
+      setState(prev => ({ 
+        ...prev, 
+        thumbnail: thumbnail,
+        thumbnails: { medium: thumbnail }, // 호환성을 위해 medium으로 저장
+        thumbnailGenerating: false,
+        thumbnailError: null
+      }));
+    } catch (error) {
+      const errorMessage = error instanceof Error 
+        ? `썸네일 생성 실패: ${error.message}`
+        : '썸네일 생성 중 알 수 없는 오류가 발생했습니다.';
+      
+      console.error('썸네일 생성 실패:', error);
+      setState(prev => ({ 
+        ...prev, 
+        thumbnailError: errorMessage,
+        thumbnailGenerating: false 
+      }));
+    }
+  }, []);
+
   const handleFileSelect = useCallback(async (file: File) => {
     const validationError = validateFile(file);
     if (validationError) {
@@ -110,11 +173,15 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onUpload, onError }) =
     try {
       // 미리보기 생성
       const preview = URL.createObjectURL(file);
-      setState(prev => ({ ...prev, preview, file, progress: 30 }));
+      setState(prev => ({ ...prev, preview, file, progress: 20 }));
 
       // EXIF 데이터 추출
       const exifData = await extractExifData(file);
-      setState(prev => ({ ...prev, exifData, progress: 60 }));
+      setState(prev => ({ ...prev, exifData, progress: 50 }));
+
+      // 썸네일 생성 (백그라운드에서 실행)
+      generateThumbnails(file);
+      setState(prev => ({ ...prev, progress: 80 }));
 
       setState(prev => ({ ...prev, progress: 100, isUploading: false }));
     } catch (error) {
@@ -122,7 +189,7 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onUpload, onError }) =
       setState(prev => ({ ...prev, error: errorMessage, isUploading: false }));
       onError(errorMessage);
     }
-  }, [validateFile, extractExifData, onError]);
+  }, [validateFile, extractExifData, generateThumbnails, onError]);
 
   const handleFileInputChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -153,13 +220,33 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onUpload, onError }) =
       };
     }
 
+    // 썸네일 데이터 추가
+    if (state.thumbnail) {
+      uploadData.thumbnail = state.thumbnail;
+    }
+
+    if (Object.keys(state.thumbnails).length > 0) {
+      uploadData.thumbnails = state.thumbnails;
+    }
+
     onUpload(uploadData);
-  }, [state.file, state.description, state.exifData, onUpload]);
+  }, [state.file, state.description, state.exifData, state.thumbnail, state.thumbnails, onUpload]);
 
   const handleReset = useCallback(() => {
     if (state.preview) {
       URL.revokeObjectURL(state.preview);
     }
+
+    // 썸네일 메모리 정리
+    if (state.thumbnail?.dataUrl) {
+      URL.revokeObjectURL(state.thumbnail.dataUrl);
+    }
+    Object.values(state.thumbnails).forEach(thumbnail => {
+      if (thumbnail.dataUrl && thumbnail.dataUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(thumbnail.dataUrl);
+      }
+    });
+
     setState({
       isUploading: false,
       progress: 0,
@@ -168,10 +255,14 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onUpload, onError }) =
       description: '',
       exifData: null,
       error: null,
+      thumbnail: null,
+      thumbnails: {},
+      thumbnailGenerating: false,
+      thumbnailError: null,
     });
     if (fileInputRef.current) fileInputRef.current.value = '';
     if (cameraInputRef.current) cameraInputRef.current.value = '';
-  }, [state.preview]);
+  }, [state.preview, state.thumbnail, state.thumbnails]);
 
   return (
     <div className="photo-upload">
@@ -217,19 +308,49 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onUpload, onError }) =
           </div>
         ) : (
           <div className="preview-area">
-            <img 
-              src={state.preview} 
-              alt="미리보기" 
-              className="preview-image"
-            />
-            <button
-              type="button"
-              onClick={handleReset}
-              className="reset-button"
-              aria-label="사진 다시 선택"
-            >
-              ✕
-            </button>
+            <div className="main-preview">
+              <img 
+                src={state.thumbnail?.dataUrl || state.preview} 
+                alt="미리보기" 
+                className="preview-image"
+              />
+              <button
+                type="button"
+                onClick={handleReset}
+                className="reset-button"
+                aria-label="사진 다시 선택"
+              >
+                ✕
+              </button>
+              {state.thumbnailGenerating && (
+                <div className="thumbnail-loading">
+                  <div className="loading-spinner"></div>
+                  <span>썸네일 생성 중...</span>
+                </div>
+              )}
+            </div>
+            
+            {Object.keys(state.thumbnails).length > 0 && (
+              <div className="thumbnail-preview">
+                <h4>생성된 썸네일</h4>
+                <div className="thumbnail-sizes">
+                  {Object.entries(state.thumbnails).map(([size, thumbnail]) => (
+                    <div key={size} className="thumbnail-item">
+                      <img 
+                        src={thumbnail.dataUrl} 
+                        alt={`${size} 썸네일`}
+                        className="thumbnail-image"
+                      />
+                      <div className="thumbnail-info">
+                        <span className="size-label">{size}</span>
+                        <span className="dimensions">{thumbnail.width}×{thumbnail.height}</span>
+                        <span className="file-size">{Math.round(thumbnail.size / 1024)}KB</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -246,6 +367,19 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onUpload, onError }) =
         {state.error && (
           <div className="error-message" role="alert">
             {state.error}
+          </div>
+        )}
+
+        {state.thumbnailError && (
+          <div className="thumbnail-error" role="alert">
+            ⚠️ {state.thumbnailError}
+            <button 
+              type="button" 
+              onClick={() => state.file && generateThumbnails(state.file)}
+              className="retry-button"
+            >
+              다시 시도
+            </button>
           </div>
         )}
       </div>
