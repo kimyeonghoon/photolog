@@ -19,6 +19,10 @@ interface PhotoUploadData {
     height: number;
     size: number;
   };
+  exifData?: {
+    timestamp?: string;
+    [key: string]: any;
+  };
 }
 
 // 저장된 사진 데이터

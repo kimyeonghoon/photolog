@@ -16,6 +16,7 @@ interface PhotoUploadData {
   };
   thumbnail?: ThumbnailResult;
   thumbnails?: { [key: string]: ThumbnailResult };
+  exifData?: ExifData;
 }
 
 interface ExifData {
@@ -213,11 +214,17 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onUpload, onError }) =
       description: state.description,
     };
 
-    if (state.exifData?.latitude && state.exifData?.longitude) {
-      uploadData.location = {
-        latitude: state.exifData.latitude,
-        longitude: state.exifData.longitude,
-      };
+    // EXIF 데이터 추가 (촬영 시간 포함)
+    if (state.exifData) {
+      uploadData.exifData = state.exifData;
+      
+      // 위치 정보가 있으면 location 필드도 설정
+      if (state.exifData.latitude && state.exifData.longitude) {
+        uploadData.location = {
+          latitude: state.exifData.latitude,
+          longitude: state.exifData.longitude,
+        };
+      }
     }
 
     // 썸네일 데이터 추가
