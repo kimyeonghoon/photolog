@@ -3,8 +3,11 @@ import { HomePage } from './pages/HomePage'
 import { UploadPage } from './pages/UploadPage'
 import { TestPage } from './pages/TestPage'
 import { MapView } from './components/MapView'
+import { ThemeProvider } from './contexts/ThemeContext'
+import { ThemeToggle } from './components/ThemeToggle'
 import './App.css'
 import './components/PhotoUpload.css'
+import './styles/theme.css'
 
 // 타입 정의 - 업로드 시 받는 데이터
 interface PhotoUploadData {
@@ -73,42 +76,45 @@ function App() {
   }
 
   return (
-    <div className="app">
-      {currentPage === 'home' ? (
-        <HomePage 
-          photos={uploadedPhotos}
-          onUploadClick={handleUploadClick}
-          onMapClick={handleMapClick}
-          onTestClick={handleTestClick}
-        />
-      ) : currentPage === 'upload' ? (
-        <UploadPage 
-          onUpload={handleUpload}
-          onError={handleError}
-          onBackClick={handleBackClick}
-        />
-      ) : currentPage === 'test' ? (
-        <div className="test-page">
-          <header className="test-header">
-            <button onClick={handleBackClick} className="back-button">
-              ← 돌아가기
-            </button>
-            <h1>🧪 테스트</h1>
-          </header>
-          <TestPage />
-        </div>
-      ) : (
-        <div className="map-page">
-          <header className="map-header">
-            <button onClick={handleBackClick} className="back-button">
-              ← 돌아가기
-            </button>
-            <h1>📍 지도</h1>
-          </header>
-          <MapView photos={uploadedPhotos} />
-        </div>
-      )}
-    </div>
+    <ThemeProvider>
+      <div className="app">
+        <ThemeToggle />
+        {currentPage === 'home' ? (
+          <HomePage 
+            photos={uploadedPhotos}
+            onUploadClick={handleUploadClick}
+            onMapClick={handleMapClick}
+            onTestClick={handleTestClick}
+          />
+        ) : currentPage === 'upload' ? (
+          <UploadPage 
+            onUpload={handleUpload}
+            onError={handleError}
+            onBackClick={handleBackClick}
+          />
+        ) : currentPage === 'test' ? (
+          <div className="test-page">
+            <header className="test-header">
+              <button onClick={handleBackClick} className="back-button">
+                ← 돌아가기
+              </button>
+              <h1>🧪 테스트</h1>
+            </header>
+            <TestPage />
+          </div>
+        ) : (
+          <div className="map-page">
+            <header className="map-header">
+              <button onClick={handleBackClick} className="back-button">
+                ← 돌아가기
+              </button>
+              <h1>📍 지도</h1>
+            </header>
+            <MapView photos={uploadedPhotos} />
+          </div>
+        )}
+      </div>
+    </ThemeProvider>
   )
 }
 
