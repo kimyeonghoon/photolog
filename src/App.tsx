@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { HomePage } from './pages/HomePage'
 import { UploadPage } from './pages/UploadPage'
+import { MapView } from './components/MapView'
 import './App.css'
 import './components/PhotoUpload.css'
 
@@ -27,7 +28,7 @@ interface StoredPhotoData extends PhotoUploadData {
 
 function App() {
   const [uploadedPhotos, setUploadedPhotos] = useState<StoredPhotoData[]>([])
-  const [currentPage, setCurrentPage] = useState<'home' | 'upload'>('home')
+  const [currentPage, setCurrentPage] = useState<'home' | 'upload' | 'map'>('home')
 
   const handleUpload = (data: PhotoUploadData) => {
     console.log('업로드된 사진 데이터:', data)
@@ -58,19 +59,34 @@ function App() {
     setCurrentPage('home')
   }
 
+  const handleMapClick = () => {
+    setCurrentPage('map')
+  }
+
   return (
     <div className="app">
       {currentPage === 'home' ? (
         <HomePage 
           photos={uploadedPhotos}
           onUploadClick={handleUploadClick}
+          onMapClick={handleMapClick}
         />
-      ) : (
+      ) : currentPage === 'upload' ? (
         <UploadPage 
           onUpload={handleUpload}
           onError={handleError}
           onBackClick={handleBackClick}
         />
+      ) : (
+        <div className="map-page">
+          <header className="map-header">
+            <button onClick={handleBackClick} className="back-button">
+              ← 돌아가기
+            </button>
+            <h1>📍 지도</h1>
+          </header>
+          <MapView photos={uploadedPhotos} />
+        </div>
       )}
     </div>
   )

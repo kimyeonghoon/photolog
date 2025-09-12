@@ -16,3 +16,78 @@ body {
   padding: 0;
   background: #f8f9fa;
 }
+
+/* Map page styles */
+.map-page {
+  min-height: 100vh;
+  background-color: #f8fafc;
+}
+
+.map-header {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+  gap: 1rem;
+}
+
+.map-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1a202c;
+}
+
+.back-button {
+  padding: 0.5rem 1rem;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.back-button:hover {
+  background: #2563eb;
+}
+
+/* Header buttons */
+.header-buttons {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.map-button-header {
+  padding: 0.75rem 1.5rem;
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.map-button-header:hover {
+  background: #059669;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+@media (max-width: 480px) {
+  .header-buttons {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .map-button-header,
+  .upload-button-header {
+    width: 100%;
+  }
+}

@@ -21,9 +21,10 @@ interface StoredPhotoData {
 interface HomePageProps {
   photos: StoredPhotoData[];
   onUploadClick: () => void;
+  onMapClick: () => void;
 }
 
-export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick }) => {
+export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMapClick }) => {
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
 
@@ -117,12 +118,20 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick }) => 
       <header className="homepage-header">
         <h1>📸 포토로그</h1>
         <p>나의 여행 기록</p>
-        <button 
-          onClick={onUploadClick}
-          className="upload-button-header"
-        >
-          ➕ 사진 업로드
-        </button>
+        <div className="header-buttons">
+          <button 
+            onClick={onMapClick}
+            className="map-button-header"
+          >
+            📍 지도 보기
+          </button>
+          <button 
+            onClick={onUploadClick}
+            className="upload-button-header"
+          >
+            ➕ 사진 업로드
+          </button>
+        </div>
       </header>
 
       <main className="homepage-main">
