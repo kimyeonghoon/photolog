@@ -6,7 +6,7 @@ import { SampleImageLoader } from '../components/SampleImageLoader';
 import { SampleImageTester } from '../components/SampleImageTester';
 import { GPSChecker } from '../components/GPSChecker';
 import { samplePhotos, createFileFromSample } from '../data/sampleData';
-import { PageLayout, PageHeader, PageContent } from '../components/common/PageLayout';
+import { PageHeader } from '../components/PageHeader';
 
 interface TestResult {
   filename: string;
@@ -27,9 +27,11 @@ interface TestResult {
 
 interface TestPageProps {
   onBackClick?: () => void;
+  onUploadClick?: () => void;
+  onMapClick?: () => void;
 }
 
-export const TestPage: React.FC<TestPageProps> = ({ onBackClick }) => {
+export const TestPage: React.FC<TestPageProps> = ({ onBackClick, onUploadClick, onMapClick }) => {
   const [results, setResults] = useState<TestResult[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [mapPhotos, setMapPhotos] = useState<any[]>([]);
@@ -163,13 +165,42 @@ export const TestPage: React.FC<TestPageProps> = ({ onBackClick }) => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  const headerButtons = [
+    {
+      icon: '🏠',
+      text: '홈으로',
+      onClick: onBackClick || (() => {}),
+      variant: 'secondary' as const
+    },
+    {
+      icon: '📤',
+      text: '사진 업로드',
+      onClick: onUploadClick || (() => {}),
+      variant: 'primary' as const
+    },
+    {
+      icon: '📍',
+      text: '지도 보기', 
+      onClick: onMapClick || (() => {}),
+      variant: 'success' as const
+    },
+    {
+      icon: '🧪',
+      text: '테스트',
+      onClick: () => {},
+      variant: 'secondary' as const,
+      active: true,
+      style: { backgroundColor: '#8b5cf6', borderColor: '#8b5cf6', color: 'white' }
+    }
+  ];
+
   return (
-    <PageLayout>
-      <PageHeader
-        title="🧪 샘플 이미지 기능 테스트"
-        onBackClick={onBackClick}
+    <div className="test-page">
+      <PageHeader 
+        currentPage="test"
+        buttons={headerButtons}
       />
-      <PageContent>
+      <main className="test-page-main">
         <div className="space-y-8">
           <TestSummary />
           
@@ -314,7 +345,7 @@ export const TestPage: React.FC<TestPageProps> = ({ onBackClick }) => {
             </div>
           )}
         </div>
-      </PageContent>
-    </PageLayout>
+      </main>
+    </div>
   );
 };

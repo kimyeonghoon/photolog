@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { HomePage } from './pages/HomePage'
 import { UploadPage } from './pages/UploadPage'
 import { TestPage } from './pages/TestPage'
-import { MapView } from './components/MapView'
+import { MapPage } from './pages/MapPage'
 import { ThemeProvider } from './contexts/ThemeContext'
 import './App.css'
 import './components/MultiPhotoUpload.css'
@@ -99,21 +99,20 @@ function App() {
             onUpload={handleUpload}
             onError={handleError}
             onBackClick={handleBackClick}
+            onMapClick={() => setCurrentPage('map')}
           />
         ) : currentPage === 'test' ? (
-          <TestPage onBackClick={handleBackClick} />
+          <TestPage 
+            onBackClick={handleBackClick}
+            onUploadClick={() => setCurrentPage('upload')}
+            onMapClick={() => setCurrentPage('map')}
+          />
         ) : (
-          <div className="page-layout">
-            <header className="page-header">
-              <button onClick={handleBackClick} className="btn-back">
-                ← 돌아가기
-              </button>
-              <h1>📍 지도</h1>
-            </header>
-            <div className="page-content" style={{ padding: 0, maxWidth: 'none' }}>
-              <MapView photos={uploadedPhotos} />
-            </div>
-          </div>
+          <MapPage 
+            photos={uploadedPhotos}
+            onBackClick={handleBackClick}
+            onUploadClick={() => setCurrentPage('upload')}
+          />
         )}
       </div>
     </ThemeProvider>

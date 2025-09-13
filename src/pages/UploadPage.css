@@ -1,5 +1,6 @@
 /* 업로드 페이지 특별 스타일 - 그라디언트 배경 유지 */
 .upload-page {
+  min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
 }
@@ -19,15 +20,21 @@
   color: rgba(255, 255, 255, 0.9);
 }
 
-.upload-page .btn-back {
+.upload-page .header-buttons .btn {
   background: rgba(255, 255, 255, 0.2);
   border-color: rgba(255, 255, 255, 0.3);
   color: white;
 }
 
-.upload-page .btn-back:hover {
+.upload-page .header-buttons .btn:hover {
   background: rgba(255, 255, 255, 0.3);
   border-color: rgba(255, 255, 255, 0.4);
+}
+
+.upload-page .header-buttons .btn.active {
+  background: rgba(255, 255, 255, 0.9);
+  color: #667eea;
+  border-color: rgba(255, 255, 255, 0.9);
 }
 
 /* Main Content */
@@ -35,6 +42,7 @@
   display: flex;
   justify-content: center;
   align-items: flex-start;
+  padding: 40px 20px;
 }
 
 .upload-container {

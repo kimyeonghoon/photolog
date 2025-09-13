@@ -1,0 +1,9 @@
+.map-page {
+  min-height: 100vh;
+  background: var(--bg-primary);
+}
+
+.map-page-main {
+  padding: 0;
+  max-width: none;
+}
