@@ -51,8 +51,7 @@ export const GPSChecker: React.FC = () => {
       for (let i = 0; i < imageNames.length; i += batchSize) {
         const batch = imageNames.slice(i, i + batchSize);
         
-        const batchPromises = batch.map(async (filename, batchIndex) => {
-          const actualIndex = i + batchIndex;
+        const batchPromises = batch.map(async (filename) => {
           
           try {
             const imageResponse = await fetch(`/sample-images/${filename.trim()}`);

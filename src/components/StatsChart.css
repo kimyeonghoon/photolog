@@ -1,0 +1,259 @@
+.stats-chart {
+  width: 100%;
+  padding: var(--spacing-md);
+  background: var(--bg-secondary);
+  border-radius: var(--border-radius-lg);
+  border: 1px solid var(--border-color);
+  margin-bottom: var(--spacing-lg);
+}
+
+.chart-empty {
+  text-align: center;
+  padding: var(--spacing-xl);
+  color: var(--text-muted);
+}
+
+.chart-section {
+  margin-bottom: var(--spacing-xl);
+}
+
+.chart-section:last-child {
+  margin-bottom: 0;
+}
+
+.chart-section h3 {
+  margin: 0 0 var(--spacing-lg) 0;
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+/* 지역별 분포 차트 */
+.region-chart {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xl);
+  flex-wrap: wrap;
+}
+
+.pie-chart {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: var(--bg-primary);
+  border: 2px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.pie-slice {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  clip-path: polygon(50% 50%, 50% 0%, 100% 0%, 100% 50%);
+}
+
+.region-legend {
+  flex: 1;
+  min-width: 200px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legend-text {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+/* 년도별 차트 */
+.yearly-chart {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.year-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.year-label {
+  min-width: 60px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.year-progress {
+  flex: 1;
+  height: 20px;
+  background: var(--bg-primary);
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+}
+
+.year-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+  border-radius: var(--border-radius-sm);
+  transition: width 0.3s ease;
+}
+
+.year-count {
+  min-width: 50px;
+  text-align: right;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+/* 월별 트렌드 차트 */
+.monthly-chart {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--spacing-xs);
+  height: 120px;
+  padding: var(--spacing-sm) 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.month-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  height: 100%;
+}
+
+.month-fill {
+  width: 100%;
+  max-width: 24px;
+  background: linear-gradient(180deg, #10b981, #059669);
+  border-radius: var(--border-radius-sm) var(--border-radius-sm) 0 0;
+  transition: height 0.3s ease;
+  cursor: pointer;
+}
+
+.month-fill:hover {
+  background: linear-gradient(180deg, #34d399, #10b981);
+}
+
+.month-label {
+  margin-top: var(--spacing-sm);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* 요약 통계 */
+.summary-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.summary-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--bg-primary);
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--border-color);
+}
+
+.summary-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.summary-content {
+  flex: 1;
+}
+
+.summary-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.summary-value {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .stats-chart {
+    padding: var(--spacing-sm);
+  }
+  
+  .region-chart {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  
+  .pie-chart {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .year-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-sm);
+  }
+  
+  .year-label,
+  .year-count {
+    text-align: center;
+  }
+  
+  .monthly-chart {
+    height: 80px;
+  }
+  
+  .month-fill {
+    max-width: 20px;
+  }
+  
+  .summary-stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 다크 모드 호환성 */
+@media (prefers-color-scheme: dark) {
+  .pie-chart {
+    border-color: var(--border-color);
+  }
+  
+  .year-progress,
+  .summary-item {
+    border-color: var(--border-color);
+  }
+  
+  .monthly-chart {
+    border-color: var(--border-color);
+  }
+}

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { PhotoModal } from '../components/PhotoModal';
+import { StatsChart } from '../components/StatsChart';
 import './HomePage.css';
 
 interface StoredPhotoData {
@@ -205,6 +206,11 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
               </div>
             </div>
           </div>
+        )}
+
+        {/* 상세 통계 차트 */}
+        {photos.length > 0 && (
+          <StatsChart photos={photos} />
         )}
 
         {photos.length === 0 ? (

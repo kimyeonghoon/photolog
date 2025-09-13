@@ -233,7 +233,7 @@ export const SampleImageTester: React.FC = () => {
                   photos={imagesWithGPS.map(img => ({
                     file: img.file,
                     description: img.filename,
-                    location: img.location,
+                    location: img.location || undefined,
                     uploadedAt: new Date(),
                     thumbnail: img.thumbnail
                   }))} 

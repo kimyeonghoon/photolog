@@ -81,7 +81,8 @@ export const TestPage: React.FC = () => {
 
         for (const { name, size } of sizes) {
           const options: ThumbnailOptions = {
-            size,
+            width: size,
+            height: size,
             quality: 0.8,
             format: 'jpeg',
             mode: 'crop'
@@ -89,7 +90,7 @@ export const TestPage: React.FC = () => {
 
           const thumbnailResult = await createThumbnail(file, options);
           
-          if (thumbnailResult.success) {
+          if (thumbnailResult) {
             result.thumbnails.push({
               name,
               dataUrl: thumbnailResult.dataUrl,
