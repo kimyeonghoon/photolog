@@ -81,14 +81,21 @@ export const MultiPhotoUpload: React.FC<MultiPhotoUploadProps> = ({ onUpload, on
   // EXIF 데이터 추출
   const extractExifData = useCallback(async (file: File): Promise<ExifData | null> => {
     try {
+      console.log('EXIF 추출 시작:', file.name);
+      
+      // 더 광범위한 EXIF 데이터 추출 시도
       const exif = await exifr.parse(file, {
-        pick: ['GPS', 'GPSLatitude', 'GPSLongitude', 'GPSLatitudeRef', 'GPSLongitudeRef', 
-               'DateTimeOriginal', 'DateTime', 'CreateDate', 'DateTimeDigitized', 
-               'Make', 'Model', 'LensModel'],
-        translateKeys: false,
-        mergeOutput: false
+        // pick 옵션을 제거하여 모든 EXIF 데이터를 추출
+        translateKeys: true,
+        mergeOutput: true
       });
-      if (!exif) return null;
+      
+      console.log('추출된 전체 EXIF 데이터:', exif);
+      
+      if (!exif) {
+        console.log('EXIF 데이터 없음');
+        return null;
+      }
 
 
       const exifData: ExifData = {};
@@ -97,10 +104,21 @@ export const MultiPhotoUpload: React.FC<MultiPhotoUploadProps> = ({ onUpload, on
       let lat: number | undefined;
       let lng: number | undefined;
       
+      console.log('GPS 관련 필드 확인:', {
+        latitude: exif.latitude,
+        longitude: exif.longitude,
+        GPSLatitude: exif.GPSLatitude,
+        GPSLongitude: exif.GPSLongitude,
+        GPSLatitudeRef: exif.GPSLatitudeRef,
+        GPSLongitudeRef: exif.GPSLongitudeRef,
+        gpsKeys: Object.keys(exif).filter(key => key.toLowerCase().includes('gps'))
+      });
+      
       // 방법 1: 자동 변환된 좌표
       if (exif.latitude && exif.longitude) {
         lat = exif.latitude;
         lng = exif.longitude;
+        console.log('GPS 방법 1 성공 (자동 변환):', { lat, lng });
       }
       // 방법 2: 직접 GPS 태그에서 추출
       else if (exif.GPSLatitude && exif.GPSLongitude) {
@@ -110,46 +128,66 @@ export const MultiPhotoUpload: React.FC<MultiPhotoUploadProps> = ({ onUpload, on
         // GPS 참조 방향 확인
         if (exif.GPSLatitudeRef === 'S' && lat) lat = -lat;
         if (exif.GPSLongitudeRef === 'W' && lng) lng = -lng;
+        console.log('GPS 방법 2 성공 (직접 태그):', { lat, lng, latRef: exif.GPSLatitudeRef, lngRef: exif.GPSLongitudeRef });
       }
-      // 방법 3: 숫자 태그로 시도 (1, 2, 3, 4 = GPSLatitudeRef, GPSLatitude, GPSLongitudeRef, GPSLongitude)
+      // 방법 3: 숫자 태그로 시도
       else if (exif[2] && exif[4]) {
         lat = exif[2];
         lng = exif[4];
         if (exif[1] === 'S' && lat) lat = -lat;
         if (exif[3] === 'W' && lng) lng = -lng;
+        console.log('GPS 방법 3 성공 (숫자 태그):', { lat, lng });
       }
       
       if (lat && lng && !isNaN(lat) && !isNaN(lng)) {
         exifData.latitude = lat;
         exifData.longitude = lng;
-        console.log('GPS 정보 추출 성공:', { latitude: lat, longitude: lng });
+        console.log('GPS 정보 최종 저장:', { latitude: lat, longitude: lng });
       } else {
         console.log('GPS 정보 없음 또는 추출 실패');
       }
 
       // 촬영 시간 - GPSChecker와 동일한 방식으로 우선순위 적용
+      console.log('시간 관련 필드 확인:', {
+        DateTimeOriginal: exif.DateTimeOriginal,
+        DateTime: exif.DateTime,
+        CreateDate: exif.CreateDate,
+        DateTimeDigitized: exif.DateTimeDigitized
+      });
+      
       if (exif.DateTimeOriginal) {
         exifData.timestamp = exif.DateTimeOriginal.toISOString();
+        console.log('촬영시간 저장 (DateTimeOriginal):', exifData.timestamp);
       } else if (exif.DateTime) {
         exifData.timestamp = exif.DateTime.toISOString();
+        console.log('촬영시간 저장 (DateTime):', exifData.timestamp);
       } else if (exif.CreateDate) {
         exifData.timestamp = exif.CreateDate.toISOString();
+        console.log('촬영시간 저장 (CreateDate):', exifData.timestamp);
       } else if (exif.DateTimeDigitized) {
         exifData.timestamp = exif.DateTimeDigitized.toISOString();
+        console.log('촬영시간 저장 (DateTimeDigitized):', exifData.timestamp);
+      } else {
+        console.log('촬영시간 정보 없음');
       }
 
       // 카메라 정보 - 숫자 태그와 문자열 키 모두 확인
       const make = exif.Make || exif[271];
       const model = exif.Model || exif[272];
+      console.log('카메라 정보:', { Make: exif.Make, Model: exif.Model, make, model });
+      
       if (make || model) {
         exifData.camera = [make, model].filter(Boolean).join(' ');
+        console.log('카메라 정보 저장:', exifData.camera);
       }
 
       // 렌즈 정보
       if (exif.LensModel) {
         exifData.lens = exif.LensModel;
+        console.log('렌즈 정보 저장:', exifData.lens);
       }
 
+      console.log('최종 exifData:', exifData);
       return exifData;
     } catch (error) {
       console.warn('EXIF 데이터 추출 실패:', error);
