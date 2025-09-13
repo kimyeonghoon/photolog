@@ -1,10 +1,11 @@
 .stats-chart {
   width: 100%;
-  padding: var(--spacing-md);
+  padding: var(--spacing-lg);
   background: var(--bg-secondary);
-  border-radius: var(--border-radius-lg);
+  border-radius: 20px;
   border: 1px solid var(--border-color);
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+  box-shadow: var(--shadow-card);
 }
 
 .chart-empty {
@@ -66,6 +67,13 @@
   align-items: center;
   gap: var(--spacing-sm);
   margin-bottom: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-md);
+  transition: background-color 0.2s ease;
+}
+
+.legend-item:hover {
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .legend-color {
@@ -104,7 +112,7 @@
   flex: 1;
   height: 20px;
   background: var(--bg-primary);
-  border-radius: var(--border-radius-sm);
+  border-radius: 10px;
   border: 1px solid var(--border-color);
   overflow: hidden;
 }
@@ -112,7 +120,7 @@
 .year-fill {
   height: 100%;
   background: linear-gradient(90deg, #3b82f6, #1d4ed8);
-  border-radius: var(--border-radius-sm);
+  border-radius: 10px;
   transition: width 0.3s ease;
 }
 
@@ -147,7 +155,7 @@
   width: 100%;
   max-width: 24px;
   background: linear-gradient(180deg, #10b981, #059669);
-  border-radius: var(--border-radius-sm) var(--border-radius-sm) 0 0;
+  border-radius: 8px 8px 0 0;
   transition: height 0.3s ease;
   cursor: pointer;
 }
@@ -176,8 +184,14 @@
   gap: var(--spacing-md);
   padding: var(--spacing-md);
   background: var(--bg-primary);
-  border-radius: var(--border-radius-md);
+  border-radius: 16px;
   border: 1px solid var(--border-color);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.summary-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card);
 }
 
 .summary-icon {
