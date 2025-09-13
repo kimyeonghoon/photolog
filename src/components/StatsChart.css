@@ -1,6 +1,6 @@
 .stats-chart {
   width: 100%;
-  padding: var(--spacing-lg);
+  padding: 30px;
   background: var(--bg-secondary);
   border-radius: 20px;
   border: 1px solid var(--border-color);
@@ -15,7 +15,7 @@
 }
 
 .chart-section {
-  margin-bottom: var(--spacing-xl);
+  margin-bottom: 40px;
 }
 
 .chart-section:last-child {
@@ -23,7 +23,7 @@
 }
 
 .chart-section h3 {
-  margin: 0 0 var(--spacing-lg) 0;
+  margin: 0 0 20px 0;
   color: var(--text-primary);
   font-size: 1.1rem;
   font-weight: 600;
@@ -134,18 +134,23 @@
 
 /* 월별 트렌드 차트 */
 .monthly-chart {
+  padding: var(--spacing-sm) 0;
+}
+
+.monthly-bars {
   display: flex;
   align-items: end;
   justify-content: space-between;
   gap: var(--spacing-xs);
   height: 120px;
-  padding: var(--spacing-sm) 0;
+  margin-bottom: 12px;
   border-bottom: 1px solid var(--border-color);
 }
 
 .month-bar {
   display: flex;
   flex-direction: column;
+  justify-content: flex-end;
   align-items: center;
   flex: 1;
   height: 100%;
@@ -155,17 +160,24 @@
   width: 100%;
   max-width: 24px;
   background: linear-gradient(180deg, #10b981, #059669);
-  border-radius: 8px 8px 0 0;
+  border-radius: 4px 4px 0 0;
   transition: height 0.3s ease;
   cursor: pointer;
+  margin-bottom: -1px;
 }
 
 .month-fill:hover {
   background: linear-gradient(180deg, #34d399, #10b981);
 }
 
+.monthly-labels {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--spacing-xs);
+}
+
 .month-label {
-  margin-top: var(--spacing-sm);
+  flex: 1;
   font-size: 0.8rem;
   color: var(--text-muted);
   text-align: center;
@@ -218,7 +230,15 @@
 /* 반응형 디자인 */
 @media (max-width: 768px) {
   .stats-chart {
-    padding: var(--spacing-sm);
+    padding: 20px;
+  }
+  
+  .chart-section {
+    margin-bottom: 30px;
+  }
+  
+  .chart-section h3 {
+    margin: 0 0 16px 0;
   }
   
   .region-chart {
@@ -243,7 +263,7 @@
     text-align: center;
   }
   
-  .monthly-chart {
+  .monthly-bars {
     height: 80px;
   }
   
@@ -267,7 +287,7 @@
     border-color: var(--border-color);
   }
   
-  .monthly-chart {
+  .monthly-bars {
     border-color: var(--border-color);
   }
 }

@@ -227,18 +227,24 @@ export const StatsChart: React.FC<StatsChartProps> = ({ photos }) => {
       <div className="chart-section">
         <h3>📈 월별 업로드 트렌드</h3>
         <div className="monthly-chart">
-          {monthlyTrend.map(month => (
-            <div key={month.month} className="month-bar">
-              <div 
-                className="month-fill"
-                style={{
-                  height: maxMonthly > 0 ? `${(month.count / maxMonthly) * 100}%` : '0%'
-                }}
-                title={`${month.month}: ${month.count}장`}
-              />
-              <div className="month-label">{month.month}</div>
-            </div>
-          ))}
+          <div className="monthly-bars">
+            {monthlyTrend.map(month => (
+              <div key={month.month} className="month-bar">
+                <div 
+                  className="month-fill"
+                  style={{
+                    height: maxMonthly > 0 ? `${(month.count / maxMonthly) * 100}%` : '0%'
+                  }}
+                  title={`${month.month}: ${month.count}장`}
+                />
+              </div>
+            ))}
+          </div>
+          <div className="monthly-labels">
+            {monthlyTrend.map(month => (
+              <div key={month.month} className="month-label">{month.month}</div>
+            ))}
+          </div>
         </div>
       </div>
 
