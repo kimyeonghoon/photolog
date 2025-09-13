@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { PhotoModal } from '../components/PhotoModal';
 import { StatsChart } from '../components/StatsChart';
+import { LocationDisplay } from '../components/LocationDisplay';
 import './HomePage.css';
 
 interface StoredPhotoData {
@@ -333,7 +334,10 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
                     
                     {photo.location && (
                       <p className="photo-location">
-                        📍 위치 정보 있음
+                        <LocationDisplay 
+                          latitude={photo.location.latitude}
+                          longitude={photo.location.longitude}
+                        />
                       </p>
                     )}
                     

@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { LocationDisplay } from './LocationDisplay';
 import './PhotoModal.css';
 
 interface StoredPhotoData {
@@ -185,7 +186,11 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
                 <div className="info-item">
                   <span className="info-label">📍 위치:</span>
                   <span className="info-value">
-                    {photo.location.latitude.toFixed(6)}, {photo.location.longitude.toFixed(6)}
+                    <LocationDisplay 
+                      latitude={photo.location.latitude}
+                      longitude={photo.location.longitude}
+                      showIcon={false}
+                    />
                   </span>
                 </div>
               )}

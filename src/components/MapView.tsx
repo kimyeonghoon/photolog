@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { getCachedLocation } from '../utils/geocoding';
 import './MapView.css';
 
 interface PhotoData {
@@ -214,27 +215,42 @@ export const MapView: React.FC<MapViewProps> = ({ className, photos = [] }) => {
         ? photo.description 
         : '설명 없음';
       
-      const popupContent = `
-        <div class="photo-popup">
-          <div class="photo-popup-image">
-            ${photo.thumbnail 
-              ? `<img src="${photo.thumbnail.dataUrl}" alt="${displayDescription}" />` 
-              : `<div class="photo-placeholder">📸</div>`
-            }
+      // 위치명을 조회해서 팝업에 포함
+      const setupPopupWithLocation = async () => {
+        if (!photo.location) return;
+        
+        let locationName = '';
+        try {
+          locationName = await getCachedLocation(photo.location.latitude, photo.location.longitude);
+        } catch (error) {
+          locationName = `${photo.location.latitude.toFixed(4)}, ${photo.location.longitude.toFixed(4)}`;
+        }
+        
+        const popupContent = `
+          <div class="photo-popup">
+            <div class="photo-popup-image">
+              ${photo.thumbnail 
+                ? `<img src="${photo.thumbnail.dataUrl}" alt="${displayDescription}" />` 
+                : `<div class="photo-placeholder">📸</div>`
+              }
+            </div>
+            <div class="photo-popup-info">
+              <h4>${displayDescription}</h4>
+              <p>📅 ${timeLabel}: ${captureDateTime.toLocaleDateString('ko-KR')} ${captureDateTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</p>
+              <p>📍 ${locationName}</p>
+              ${!isExifTime ? '<p class="time-note">⚠️ EXIF 촬영 시간 없음</p>' : ''}
+            </div>
           </div>
-          <div class="photo-popup-info">
-            <h4>${displayDescription}</h4>
-            <p>📅 ${timeLabel}: ${captureDateTime.toLocaleDateString('ko-KR')} ${captureDateTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</p>
-            <p>📍 ${photo.location.latitude.toFixed(4)}, ${photo.location.longitude.toFixed(4)}</p>
-            ${!isExifTime ? '<p class="time-note">⚠️ EXIF 촬영 시간 없음</p>' : ''}
-          </div>
-        </div>
-      `;
+        `;
 
-      marker.bindPopup(popupContent, {
-        maxWidth: 300,
-        className: 'photo-marker-popup'
-      });
+        marker.bindPopup(popupContent, {
+          maxWidth: 300,
+          className: 'photo-marker-popup'
+        });
+      };
+
+      // 비동기로 위치명 조회 후 팝업 설정
+      setupPopupWithLocation();
 
       markersRef.current.push(marker);
     });
