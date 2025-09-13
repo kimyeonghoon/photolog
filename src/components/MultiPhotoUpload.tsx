@@ -397,12 +397,15 @@ export const MultiPhotoUpload: React.FC<MultiPhotoUploadProps> = ({ onUpload, on
     
     if (completedFiles.length > 0) {
       // 설명 조합 로직: 개별 설명이 있으면 "전체설명 - 개별설명", 없으면 "전체설명"
-      const filesWithDescriptions = completedFiles.map(file => ({
-        ...file,
-        description: (file.description && file.description.trim()) 
-          ? `${state.globalDescription} - ${file.description.trim()}`
-          : state.globalDescription
-      }));
+      const filesWithDescriptions = completedFiles.map(file => {
+        const individualDesc = file.description?.trim();
+        return {
+          ...file,
+          description: individualDesc 
+            ? `${state.globalDescription} - ${individualDesc}`
+            : state.globalDescription
+        };
+      });
       
       onUpload(filesWithDescriptions);
       
