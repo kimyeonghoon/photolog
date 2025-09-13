@@ -14,6 +14,14 @@ interface PhotoData {
     latitude: number;
     longitude: number;
   };
+  exifData?: {
+    latitude?: number;
+    longitude?: number;
+    timestamp?: string;
+    camera?: string;
+    lens?: string;
+    [key: string]: string | number | boolean | undefined;
+  } | null;
   uploadedAt: Date;
 }
 
@@ -35,6 +43,19 @@ interface YearlyStats {
 }
 
 export const StatsChart: React.FC<StatsChartProps> = ({ photos }) => {
+  // 실제 촬영시간 또는 업로드 시간을 가져오는 함수
+  const getPhotoTime = (photo: PhotoData): Date => {
+    // EXIF 촬영시간이 있으면 우선 사용
+    if (photo.exifData?.timestamp) {
+      try {
+        return new Date(photo.exifData.timestamp);
+      } catch (error) {
+        console.warn('EXIF timestamp 파싱 실패:', photo.exifData.timestamp, error);
+      }
+    }
+    // EXIF 촬영시간이 없으면 업로드 시간 사용
+    return new Date(photo.uploadedAt);
+  };
   // 지역별 통계 계산 (위도/경도 기반 대략적 지역 분류)
   const getRegionStats = (): LocationStats[] => {
     const photosWithLocation = photos.filter(p => p.location);
@@ -80,12 +101,12 @@ export const StatsChart: React.FC<StatsChartProps> = ({ photos }) => {
       .sort((a, b) => b.count - a.count);
   };
 
-  // 년도별 통계 계산
+  // 년도별 통계 계산 (실제 촬영시간 기준)
   const getYearlyStats = (): YearlyStats[] => {
     const yearlyData: { [key: number]: YearlyStats } = {};
     
     photos.forEach(photo => {
-      const date = new Date(photo.uploadedAt);
+      const date = getPhotoTime(photo);
       const year = date.getFullYear();
       const month = date.getMonth();
       
@@ -104,7 +125,7 @@ export const StatsChart: React.FC<StatsChartProps> = ({ photos }) => {
     return Object.values(yearlyData).sort((a, b) => b.year - a.year);
   };
 
-  // 월별 업로드 트렌드 계산
+  // 월별 촬영 트렌드 계산 (실제 촬영시간 기준)
   const getMonthlyTrend = (): { month: string; count: number }[] => {
     const monthlyData: { [key: number]: number } = {};
     const monthNames = [
@@ -113,7 +134,7 @@ export const StatsChart: React.FC<StatsChartProps> = ({ photos }) => {
     ];
     
     photos.forEach(photo => {
-      const month = new Date(photo.uploadedAt).getMonth();
+      const month = getPhotoTime(photo).getMonth();
       monthlyData[month] = (monthlyData[month] || 0) + 1;
     });
     
@@ -252,7 +273,23 @@ export const StatsChart: React.FC<StatsChartProps> = ({ photos }) => {
             <div className="summary-content">
               <div className="summary-label">월 평균 업로드</div>
               <div className="summary-value">
-                {Math.round(photos.length / Math.max(yearlyStats.length * 12, 1))}장
+                {(() => {
+                  if (photos.length === 0) return 0;
+                  
+                  // 첫 업로드와 마지막 업로드 날짜 구하기
+                  const dates = photos.map(p => new Date(p.uploadedAt));
+                  const firstDate = new Date(Math.min(...dates.map(d => d.getTime())));
+                  const lastDate = new Date(Math.max(...dates.map(d => d.getTime())));
+                  
+                  // 개월 수 계산 (최소 1개월)
+                  const monthsDiff = Math.max(
+                    (lastDate.getFullYear() - firstDate.getFullYear()) * 12 + 
+                    (lastDate.getMonth() - firstDate.getMonth()) + 1,
+                    1
+                  );
+                  
+                  return Math.round(photos.length / monthsDiff);
+                })()}장
               </div>
             </div>
           </div>
