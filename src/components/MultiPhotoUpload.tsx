@@ -308,7 +308,7 @@ export const MultiPhotoUpload: React.FC<MultiPhotoUploadProps> = ({ onUpload, on
         return {
           id: generateFileId(),
           file,
-          description: state.globalDescription,
+          description: '', // 개별 설명은 빈 문자열로 시작
           status: 'pending',
           progress: 0,
           previewUrl // 즉시 미리보기용 URL 추가
