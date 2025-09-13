@@ -40,3 +40,6 @@ ehthumbs.db
 
 # Sample images
 public/sample-images/
+
+# Browser console logs
+웹브라우저_콘솔로그.txt
