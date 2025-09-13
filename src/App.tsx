@@ -5,7 +5,6 @@ import { TestPage } from './pages/TestPage'
 import { MapView } from './components/MapView'
 import { ThemeProvider } from './contexts/ThemeContext'
 import './App.css'
-import './components/PhotoUpload.css'
 import './components/MultiPhotoUpload.css'
 import './styles/theme.css'
 import './styles/design-system.css'
@@ -25,9 +24,13 @@ interface PhotoUploadData {
     size: number;
   };
   exifData?: {
+    latitude?: number;
+    longitude?: number;
     timestamp?: string;
+    camera?: string;
+    lens?: string;
     [key: string]: string | number | boolean | undefined;
-  };
+  } | null;
 }
 
 // 저장된 사진 데이터
@@ -39,9 +42,9 @@ function App() {
   const [uploadedPhotos, setUploadedPhotos] = useState<StoredPhotoData[]>([])
   const [currentPage, setCurrentPage] = useState<'home' | 'upload' | 'map' | 'test'>('home')
 
-  const handleUpload = (dataArray: PhotoUploadData[] | PhotoUploadData) => {
-    // 단일 파일과 다중 파일 모두 지원 (하위 호환성)
-    const dataList = Array.isArray(dataArray) ? dataArray : [dataArray];
+  const handleUpload = (dataArray: PhotoUploadData[]) => {
+    // 다중 파일 업로드만 지원
+    const dataList = dataArray;
     
     console.log(`업로드된 사진 데이터 ${dataList.length}개:`, dataList);
     

@@ -18,9 +18,13 @@ interface PhotoData {
   };
   uploadedAt: Date;
   exifData?: {
+    latitude?: number;
+    longitude?: number;
     timestamp?: string;
+    camera?: string;
+    lens?: string;
     [key: string]: string | number | boolean | undefined;
-  };
+  } | null;
 }
 
 interface MapViewProps {

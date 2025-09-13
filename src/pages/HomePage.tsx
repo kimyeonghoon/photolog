@@ -16,6 +16,14 @@ interface StoredPhotoData {
     latitude: number;
     longitude: number;
   };
+  exifData?: {
+    latitude?: number;
+    longitude?: number;
+    timestamp?: string;
+    camera?: string;
+    lens?: string;
+    [key: string]: string | number | boolean | undefined;
+  } | null;
   uploadedAt: Date;
 }
 

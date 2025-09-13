@@ -17,9 +17,13 @@ interface PhotoUploadData {
     size: number;
   };
   exifData?: {
+    latitude?: number;
+    longitude?: number;
     timestamp?: string;
+    camera?: string;
+    lens?: string;
     [key: string]: string | number | boolean | undefined;
-  };
+  } | null;
 }
 
 // 다중 파일 업로드 데이터 타입 (배열)
@@ -38,9 +42,13 @@ interface FileUploadData {
     size: number;
   };
   exifData?: {
+    latitude?: number;
+    longitude?: number;
     timestamp?: string;
+    camera?: string;
+    lens?: string;
     [key: string]: string | number | boolean | undefined;
-  };
+  } | null;
   status: 'pending' | 'processing' | 'completed' | 'error';
   progress: number;
 }

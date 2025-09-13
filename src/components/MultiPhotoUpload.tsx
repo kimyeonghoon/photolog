@@ -108,15 +108,15 @@ export const MultiPhotoUpload: React.FC<MultiPhotoUploadProps> = ({ onUpload, on
         lng = exif.GPSLongitude;
         
         // GPS 참조 방향 확인
-        if (exif.GPSLatitudeRef === 'S') lat = -lat;
-        if (exif.GPSLongitudeRef === 'W') lng = -lng;
+        if (exif.GPSLatitudeRef === 'S' && lat) lat = -lat;
+        if (exif.GPSLongitudeRef === 'W' && lng) lng = -lng;
       }
       // 방법 3: 숫자 태그로 시도 (1, 2, 3, 4 = GPSLatitudeRef, GPSLatitude, GPSLongitudeRef, GPSLongitude)
       else if (exif[2] && exif[4]) {
         lat = exif[2];
         lng = exif[4];
-        if (exif[1] === 'S') lat = -lat;
-        if (exif[3] === 'W') lng = -lng;
+        if (exif[1] === 'S' && lat) lat = -lat;
+        if (exif[3] === 'W' && lng) lng = -lng;
       }
       
       if (lat && lng && !isNaN(lat) && !isNaN(lng)) {
