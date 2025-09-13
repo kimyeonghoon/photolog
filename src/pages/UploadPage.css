@@ -1,53 +1,37 @@
+/* 업로드 페이지 특별 스타일 - 그라디언트 배경 유지 */
 .upload-page {
-  min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
 }
 
-/* Header */
-.upload-page-header {
-  text-align: center;
-  padding: 30px 20px;
+.upload-page .page-header {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
-  position: relative;
-}
-
-.back-button {
-  position: absolute;
-  left: 20px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-bottom-color: rgba(255, 255, 255, 0.2);
   color: white;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
 }
 
-.back-button:hover {
+.upload-page .page-header h1 {
+  color: white;
+}
+
+.upload-page .page-header p {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.upload-page .btn-back {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: white;
+}
+
+.upload-page .btn-back:hover {
   background: rgba(255, 255, 255, 0.3);
-  transform: translateY(-50%) translateX(-2px);
-}
-
-.upload-page-header h1 {
-  font-size: 2rem;
-  margin-bottom: 8px;
-  font-weight: 700;
-}
-
-.upload-page-header p {
-  font-size: 1rem;
-  opacity: 0.9;
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
 /* Main Content */
 .upload-page-main {
-  padding: 40px 20px;
   display: flex;
   justify-content: center;
   align-items: flex-start;

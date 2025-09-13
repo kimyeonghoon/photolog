@@ -19,86 +19,16 @@ body {
   background: var(--bg-secondary);
 }
 
-/* Map page styles */
-.map-page {
-  min-height: 100vh;
-  background-color: var(--bg-secondary);
-}
+/* App 특화 스타일 - 디자인 시스템으로 이동 완료 */
 
-.map-header,
-.test-header {
-  display: flex;
-  align-items: center;
-  padding: 1rem;
-  background: var(--bg-primary);
-  border-bottom: 1px solid var(--border-primary);
-  gap: 1rem;
-}
-
-.map-header h1,
-.test-header h1 {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.back-button {
-  padding: 0.5rem 1rem;
-  background: var(--accent-blue);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.back-button:hover {
-  background: var(--accent-blue);
-  filter: brightness(0.9);
-}
-
-.test-page {
-  min-height: 100vh;
-  background-color: var(--bg-secondary);
-}
-
-/* Header buttons */
-.header-buttons {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 1rem;
-}
-
-.map-button-header {
-  padding: 0.75rem 1.5rem;
-  background: var(--accent-green);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.map-button-header:hover {
-  background: var(--accent-green);
-  filter: brightness(0.9);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-card);
-}
-
+/* 헤더 버튼들 - 반응형 처리 */
 @media (max-width: 480px) {
   .header-buttons {
     flex-direction: column;
     width: 100%;
   }
   
-  .map-button-header,
-  .upload-button-header {
+  .header-buttons .btn {
     width: 100%;
   }
 }

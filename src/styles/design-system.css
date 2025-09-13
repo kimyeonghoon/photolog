@@ -1,0 +1,383 @@
+/* 포토로그 디자인 시스템 */
+
+/* === 공통 컴포넌트 스타일 === */
+
+/* 페이지 레이아웃 */
+.page-layout {
+  min-height: 100vh;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.page-header {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-primary);
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  position: relative;
+}
+
+.page-header.centered {
+  text-align: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+
+.page-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.page-header.centered h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+}
+
+.page-header p {
+  margin: 0.5rem 0 0 0;
+  font-size: 1rem;
+  color: var(--text-secondary);
+}
+
+.page-header.centered p {
+  font-size: 1.1rem;
+  margin: 0.5rem 0 1.5rem 0;
+}
+
+.page-content {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* 버튼 시스템 */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  font-family: inherit;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 버튼 변형 */
+.btn-primary {
+  background: var(--accent-blue);
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-card);
+}
+
+.btn-secondary {
+  background: var(--button-bg);
+  color: var(--button-text);
+  border: 1px solid var(--border-primary);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--button-hover);
+  border-color: var(--border-hover);
+}
+
+.btn-success {
+  background: var(--success-color);
+  color: white;
+}
+
+.btn-success:hover:not(:disabled) {
+  background: var(--success-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-card);
+}
+
+.btn-back {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--button-bg);
+  color: var(--button-text);
+  border: 1px solid var(--border-primary);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-back:hover {
+  background: var(--button-hover);
+  border-color: var(--border-hover);
+}
+
+/* 버튼 크기 */
+.btn-sm {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+.btn-lg {
+  padding: 1rem 2rem;
+  font-size: 1.125rem;
+  border-radius: 25px;
+}
+
+.btn-xl {
+  padding: 1.25rem 2.5rem;
+  font-size: 1.25rem;
+  border-radius: 30px;
+  font-weight: 600;
+}
+
+/* 카드 시스템 */
+.card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: var(--shadow-card);
+}
+
+.card-elevated {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .card-elevated {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.card-header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.card-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.card-subtitle {
+  margin: 0.5rem 0 0 0;
+  font-size: 1rem;
+  color: var(--text-secondary);
+}
+
+/* 그리드 시스템 */
+.grid {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.grid-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.grid-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.grid-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.grid-auto {
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+/* 간격 시스템 */
+.space-y-1 > * + * { margin-top: 0.25rem; }
+.space-y-2 > * + * { margin-top: 0.5rem; }
+.space-y-3 > * + * { margin-top: 0.75rem; }
+.space-y-4 > * + * { margin-top: 1rem; }
+.space-y-6 > * + * { margin-top: 1.5rem; }
+.space-y-8 > * + * { margin-top: 2rem; }
+
+.space-x-1 > * + * { margin-left: 0.25rem; }
+.space-x-2 > * + * { margin-left: 0.5rem; }
+.space-x-3 > * + * { margin-left: 0.75rem; }
+.space-x-4 > * + * { margin-left: 1rem; }
+.space-x-6 > * + * { margin-left: 1.5rem; }
+
+/* 플렉스 시스템 */
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.justify-end {
+  justify-content: flex-end;
+}
+
+.gap-1 { gap: 0.25rem; }
+.gap-2 { gap: 0.5rem; }
+.gap-3 { gap: 0.75rem; }
+.gap-4 { gap: 1rem; }
+.gap-6 { gap: 1.5rem; }
+.gap-8 { gap: 2rem; }
+
+/* 텍스트 스타일 */
+.text-center {
+  text-align: center;
+}
+
+.text-sm {
+  font-size: 0.875rem;
+}
+
+.text-lg {
+  font-size: 1.125rem;
+}
+
+.text-xl {
+  font-size: 1.25rem;
+}
+
+.text-2xl {
+  font-size: 1.5rem;
+}
+
+.text-3xl {
+  font-size: 1.875rem;
+}
+
+.font-medium {
+  font-weight: 500;
+}
+
+.font-semibold {
+  font-weight: 600;
+}
+
+.font-bold {
+  font-weight: 700;
+}
+
+.text-primary {
+  color: var(--text-primary);
+}
+
+.text-secondary {
+  color: var(--text-secondary);
+}
+
+.text-muted {
+  color: var(--text-tertiary);
+}
+
+/* 애니메이션 */
+.fade-in {
+  animation: fadeIn 0.3s ease-in;
+}
+
+.slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .page-content {
+    padding: 1rem;
+  }
+  
+  .page-header {
+    padding: 1rem;
+  }
+  
+  .page-header.centered {
+    padding: 1.5rem 1rem;
+  }
+  
+  .page-header.centered h1 {
+    font-size: 2rem;
+  }
+  
+  .grid-2,
+  .grid-3,
+  .grid-4 {
+    grid-template-columns: 1fr;
+  }
+  
+  .btn-back {
+    position: static;
+    transform: none;
+    margin-bottom: 1rem;
+  }
+  
+  .flex {
+    flex-direction: column;
+  }
+  
+  .flex > * {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-header.centered h1 {
+    font-size: 1.75rem;
+  }
+  
+  .btn-lg,
+  .btn-xl {
+    padding: 0.875rem 1.5rem;
+    font-size: 1rem;
+  }
+}

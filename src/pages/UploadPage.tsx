@@ -1,5 +1,6 @@
 import React from 'react';
 import { MultiPhotoUpload } from '../components/MultiPhotoUpload';
+import { PageLayout, PageHeader, PageContent } from '../components/common/PageLayout';
 import './UploadPage.css';
 
 interface PhotoUploadData {
@@ -59,26 +60,22 @@ export const UploadPage: React.FC<UploadPageProps> = ({
   };
 
   return (
-    <div className="upload-page">
-      <header className="upload-page-header">
-        <button 
-          onClick={onBackClick}
-          className="back-button"
-        >
-          ← 뒤로가기
-        </button>
-        <h1>📸 사진 업로드</h1>
-        <p>여행의 순간을 기록해보세요</p>
-      </header>
-
-      <main className="upload-page-main">
+    <PageLayout className="upload-page">
+      <PageHeader
+        title="📸 사진 업로드"
+        subtitle="여행의 순간을 기록해보세요"
+        centered
+        onBackClick={onBackClick}
+        className="upload-page-header"
+      />
+      <PageContent className="upload-page-main">
         <div className="upload-container">
           <MultiPhotoUpload 
             onUpload={handleMultiUpload}
             onError={onError}
           />
         </div>
-      </main>
-    </div>
+      </PageContent>
+    </PageLayout>
   );
 };

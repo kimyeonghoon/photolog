@@ -120,25 +120,25 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
       <header className="homepage-header">
         <h1>📸 포토로그</h1>
         <p>나의 여행 기록</p>
-        <div className="header-buttons">
+        <div className="header-buttons flex flex-wrap gap-3 justify-center">
           <button 
             onClick={onMapClick}
-            className="map-button-header"
+            className="btn btn-success btn-lg"
           >
             📍 지도 보기
           </button>
           {onTestClick && (
             <button 
               onClick={onTestClick}
-              className="test-button-header"
-              style={{ backgroundColor: '#10b981' }}
+              className="btn btn-secondary btn-lg"
+              style={{ backgroundColor: '#10b981', borderColor: '#10b981', color: 'white' }}
             >
               🧪 테스트
             </button>
           )}
           <button 
             onClick={onUploadClick}
-            className="upload-button-header"
+            className="btn btn-primary btn-lg"
           >
             ➕ 사진 업로드
           </button>
@@ -246,7 +246,7 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
               
               <button 
                 onClick={onUploadClick}
-                className="upload-button-empty"
+                className="btn btn-primary btn-xl"
               >
                 <span className="button-icon">➕</span>
                 첫 번째 사진 업로드하기
@@ -264,13 +264,13 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
                 <h2>포토로그 ({photos.length}장)</h2>
                 <div className="sort-controls">
                   <button 
-                    className={`sort-button ${sortOrder === 'newest' ? 'active' : ''}`}
+                    className={`btn btn-sm ${sortOrder === 'newest' ? 'btn-primary' : 'btn-secondary'}`}
                     onClick={() => handleSortChange('newest')}
                   >
                     🕒 최신순
                   </button>
                   <button 
-                    className={`sort-button ${sortOrder === 'oldest' ? 'active' : ''}`}
+                    className={`btn btn-sm ${sortOrder === 'oldest' ? 'btn-primary' : 'btn-secondary'}`}
                     onClick={() => handleSortChange('oldest')}
                   >
                     📅 오래된순

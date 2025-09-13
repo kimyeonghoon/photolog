@@ -1,62 +1,5 @@
-/* CSS 변수 정의 - 라이트 테마 (기본) */
+/* 다크 테마 전용 CSS 변수 */
 :root {
-  /* 배경 색상 */
-  --bg-primary: #ffffff;
-  --bg-secondary: #f8fafc;
-  --bg-tertiary: #f1f5f9;
-  
-  /* 텍스트 색상 */
-  --text-primary: #1f2937;
-  --text-secondary: #6b7280;
-  --text-tertiary: #9ca3af;
-  
-  /* 테두리 색상 */
-  --border-primary: #e5e7eb;
-  --border-secondary: #d1d5db;
-  --border-hover: #9ca3af;
-  
-  /* 버튼 색상 */
-  --button-bg: #f3f4f6;
-  --button-hover: #e5e7eb;
-  --button-text: #374151;
-  
-  /* 액센트 색상 */
-  --accent-blue: #3b82f6;
-  --accent-green: #059669;
-  --accent-yellow: #fef08a;
-  --accent-yellow-text: #a16207;
-  
-  /* 호환성을 위한 추가 색상 변수 */
-  --primary-color: #3b82f6;
-  --primary-hover: #2563eb;
-  --success-color: #10b981;
-  --success-hover: #059669;
-  --warning-color: #f59e0b;
-  --error-color: #ef4444;
-  --error-hover: #dc2626;
-  --border-color: #e5e7eb;
-  
-  /* 그림자 */
-  --shadow: rgba(0, 0, 0, 0.1);
-  --shadow-hover: rgba(0, 0, 0, 0.15);
-  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.1);
-  
-  /* 테마 토글 버튼 */
-  --theme-toggle-bg: #ffffff;
-  --theme-toggle-color: #1f2937;
-  
-  /* 입력 필드 */
-  --input-bg: #ffffff;
-  --input-border: #e5e7eb;
-  --input-focus: #3b82f6;
-  
-  /* 통계 카드 */
-  --stats-bg: #f8fafc;
-  --stats-border: #e2e8f0;
-}
-
-/* 다크 테마 */
-[data-theme="dark"] {
   /* 배경 색상 */
   --bg-primary: #111827;
   --bg-secondary: #1f2937;
@@ -98,10 +41,6 @@
   --shadow-hover: rgba(0, 0, 0, 0.4);
   --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.3);
   
-  /* 테마 토글 버튼 */
-  --theme-toggle-bg: #374151;
-  --theme-toggle-color: #f9fafb;
-  
   /* 입력 필드 */
   --input-bg: #374151;
   --input-border: #4b5563;
@@ -123,20 +62,20 @@ body {
   color: var(--text-primary);
 }
 
-/* 스크롤바 다크 모드 지원 */
-[data-theme="dark"] ::-webkit-scrollbar {
+/* 스크롤바 스타일 */
+::-webkit-scrollbar {
   width: 8px;
 }
 
-[data-theme="dark"] ::-webkit-scrollbar-track {
+::-webkit-scrollbar-track {
   background: var(--bg-secondary);
 }
 
-[data-theme="dark"] ::-webkit-scrollbar-thumb {
+::-webkit-scrollbar-thumb {
   background: var(--border-secondary);
   border-radius: 4px;
 }
 
-[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+::-webkit-scrollbar-thumb:hover {
   background: var(--border-hover);
 }

@@ -4,11 +4,11 @@ import { UploadPage } from './pages/UploadPage'
 import { TestPage } from './pages/TestPage'
 import { MapView } from './components/MapView'
 import { ThemeProvider } from './contexts/ThemeContext'
-import { ThemeToggle } from './components/ThemeToggle'
 import './App.css'
 import './components/PhotoUpload.css'
 import './components/MultiPhotoUpload.css'
 import './styles/theme.css'
+import './styles/design-system.css'
 
 // 타입 정의 - 업로드 시 받는 데이터
 interface PhotoUploadData {
@@ -84,7 +84,6 @@ function App() {
   return (
     <ThemeProvider>
       <div className="app">
-        <ThemeToggle />
         {currentPage === 'home' ? (
           <HomePage 
             photos={uploadedPhotos}
@@ -99,24 +98,18 @@ function App() {
             onBackClick={handleBackClick}
           />
         ) : currentPage === 'test' ? (
-          <div className="test-page">
-            <header className="test-header">
-              <button onClick={handleBackClick} className="back-button">
-                ← 돌아가기
-              </button>
-              <h1>🧪 테스트</h1>
-            </header>
-            <TestPage />
-          </div>
+          <TestPage onBackClick={handleBackClick} />
         ) : (
-          <div className="map-page">
-            <header className="map-header">
-              <button onClick={handleBackClick} className="back-button">
+          <div className="page-layout">
+            <header className="page-header">
+              <button onClick={handleBackClick} className="btn-back">
                 ← 돌아가기
               </button>
               <h1>📍 지도</h1>
             </header>
-            <MapView photos={uploadedPhotos} />
+            <div className="page-content" style={{ padding: 0, maxWidth: 'none' }}>
+              <MapView photos={uploadedPhotos} />
+            </div>
           </div>
         )}
       </div>
