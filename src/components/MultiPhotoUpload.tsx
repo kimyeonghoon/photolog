@@ -81,25 +81,39 @@ export const MultiPhotoUpload: React.FC<MultiPhotoUploadProps> = ({ onUpload, on
   // EXIF 데이터 추출
   const extractExifData = useCallback(async (file: File): Promise<ExifData | null> => {
     try {
-      const exif = await exifr.parse(file);
+      const exif = await exifr.parse(file, {
+        pick: ['GPS', 'DateTimeOriginal', 'DateTime', 'CreateDate', 'DateTimeDigitized', 'Make', 'Model', 'LensModel']
+      });
       if (!exif) return null;
+
 
       const exifData: ExifData = {};
 
       // GPS 정보 추출
-      if (exif.latitude && exif.longitude) {
-        exifData.latitude = exif.latitude;
-        exifData.longitude = exif.longitude;
+      const lat = exif.latitude || exif.GPSLatitude;
+      const lng = exif.longitude || exif.GPSLongitude;
+      
+      if (lat && lng) {
+        exifData.latitude = lat;
+        exifData.longitude = lng;
       }
 
-      // 촬영 시간
+      // 촬영 시간 - GPSChecker와 동일한 방식으로 우선순위 적용
       if (exif.DateTimeOriginal) {
         exifData.timestamp = exif.DateTimeOriginal.toISOString();
+      } else if (exif.DateTime) {
+        exifData.timestamp = exif.DateTime.toISOString();
+      } else if (exif.CreateDate) {
+        exifData.timestamp = exif.CreateDate.toISOString();
+      } else if (exif.DateTimeDigitized) {
+        exifData.timestamp = exif.DateTimeDigitized.toISOString();
       }
 
-      // 카메라 정보
-      if (exif.Make || exif.Model) {
-        exifData.camera = [exif.Make, exif.Model].filter(Boolean).join(' ');
+      // 카메라 정보 - 숫자 태그와 문자열 키 모두 확인
+      const make = exif.Make || exif[271];
+      const model = exif.Model || exif[272];
+      if (make || model) {
+        exifData.camera = [make, model].filter(Boolean).join(' ');
       }
 
       // 렌즈 정보
@@ -313,6 +327,7 @@ export const MultiPhotoUpload: React.FC<MultiPhotoUploadProps> = ({ onUpload, on
   // 업로드 완료 처리 (먼저 정의)
   const handleUploadComplete = useCallback(() => {
     const completedFiles = state.files.filter(f => f.status === 'completed');
+    
     if (completedFiles.length > 0) {
       // 설명 조합 로직: 개별 설명이 있으면 "전체설명 - 개별설명", 없으면 "전체설명"
       const filesWithDescriptions = completedFiles.map(file => ({

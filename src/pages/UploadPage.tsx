@@ -16,6 +16,10 @@ interface PhotoUploadData {
     height: number;
     size: number;
   };
+  exifData?: {
+    timestamp?: string;
+    [key: string]: string | number | boolean | undefined;
+  };
 }
 
 // 다중 파일 업로드 데이터 타입 (배열)
@@ -32,6 +36,10 @@ interface FileUploadData {
     width: number;
     height: number;
     size: number;
+  };
+  exifData?: {
+    timestamp?: string;
+    [key: string]: string | number | boolean | undefined;
   };
   status: 'pending' | 'processing' | 'completed' | 'error';
   progress: number;
@@ -54,7 +62,8 @@ export const UploadPage: React.FC<UploadPageProps> = ({
       file: file.file,
       description: file.description,
       location: file.location,
-      thumbnail: file.thumbnail
+      thumbnail: file.thumbnail,
+      exifData: file.exifData // EXIF 데이터 포함
     }));
     onUpload(convertedFiles);
   };

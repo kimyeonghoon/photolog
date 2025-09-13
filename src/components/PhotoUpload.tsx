@@ -80,25 +80,60 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onUpload, onError }) =
 
   const extractExifData = useCallback(async (file: File): Promise<ExifData | null> => {
     try {
-      const exif = await exifr.parse(file);
+      const exif = await exifr.parse(file, {
+        pick: ['GPS', 'DateTimeOriginal', 'DateTime', 'CreateDate', 'DateTimeDigitized', 'Make', 'Model', 'LensModel']
+      });
       if (!exif) return null;
 
       const exifData: ExifData = {};
 
       // GPS 정보 추출
-      if (exif.latitude && exif.longitude) {
-        exifData.latitude = exif.latitude;
-        exifData.longitude = exif.longitude;
+      console.log('GPS 확인:', { 
+        latitude: exif.latitude, 
+        longitude: exif.longitude,
+        gpsLatitude: exif.GPSLatitude,
+        gpsLongitude: exif.GPSLongitude,
+        gpsKeys: Object.keys(exif).filter(key => key.toString().toLowerCase().includes('gps')),
+        allKeys: Object.keys(exif)
+      });
+      
+      // GPS 정보는 여러 형태로 저장될 수 있음
+      const lat = exif.latitude || exif.GPSLatitude;
+      const lng = exif.longitude || exif.GPSLongitude;
+      
+      if (lat && lng) {
+        exifData.latitude = lat;
+        exifData.longitude = lng;
+        console.log('GPS 저장됨:', { latitude: exifData.latitude, longitude: exifData.longitude });
       }
 
-      // 촬영 시간
+      // 촬영 시간 - GPSChecker와 동일한 방식으로 우선순위 적용
+      console.log('시간 필드 확인:', {
+        DateTimeOriginal: exif.DateTimeOriginal,
+        DateTime: exif.DateTime,
+        CreateDate: exif.CreateDate,
+        DateTimeDigitized: exif.DateTimeDigitized
+      });
+      
       if (exif.DateTimeOriginal) {
         exifData.timestamp = exif.DateTimeOriginal.toISOString();
+        console.log('timestamp 저장됨 (DateTimeOriginal):', exifData.timestamp);
+      } else if (exif.DateTime) {
+        exifData.timestamp = exif.DateTime.toISOString();
+        console.log('timestamp 저장됨 (DateTime):', exifData.timestamp);
+      } else if (exif.CreateDate) {
+        exifData.timestamp = exif.CreateDate.toISOString();
+        console.log('timestamp 저장됨 (CreateDate):', exifData.timestamp);
+      } else if (exif.DateTimeDigitized) {
+        exifData.timestamp = exif.DateTimeDigitized.toISOString();
+        console.log('timestamp 저장됨 (DateTimeDigitized):', exifData.timestamp);
       }
 
-      // 카메라 정보
-      if (exif.Make || exif.Model) {
-        exifData.camera = [exif.Make, exif.Model].filter(Boolean).join(' ');
+      // 카메라 정보 - 숫자 태그와 문자열 키 모두 확인
+      const make = exif.Make || exif[271];
+      const model = exif.Model || exif[272];
+      if (make || model) {
+        exifData.camera = [make, model].filter(Boolean).join(' ');
       }
 
       // 렌즈 정보
@@ -106,6 +141,7 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onUpload, onError }) =
         exifData.lens = exif.LensModel;
       }
 
+      console.log('최종 exifData:', exifData);
       return exifData;
     } catch (error) {
       console.warn('EXIF 데이터 추출 실패:', error);
@@ -177,7 +213,9 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onUpload, onError }) =
       setState(prev => ({ ...prev, preview, file, progress: 20 }));
 
       // EXIF 데이터 추출
+      console.log('EXIF 추출 시작:', file.name);
       const exifData = await extractExifData(file);
+      console.log('EXIF 추출 완료:', exifData);
       setState(prev => ({ ...prev, exifData, progress: 50 }));
 
       // 썸네일 생성 (백그라운드에서 실행)
@@ -216,8 +254,10 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onUpload, onError }) =
     };
 
     // EXIF 데이터 추가 (촬영 시간 포함)
+    console.log('업로드 시 state.exifData:', state.exifData);
     if (state.exifData) {
       uploadData.exifData = state.exifData;
+      console.log('uploadData에 exifData 추가됨:', uploadData.exifData);
       
       // 위치 정보가 있으면 location 필드도 설정
       if (state.exifData.latitude && state.exifData.longitude) {
@@ -225,7 +265,10 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({ onUpload, onError }) =
           latitude: state.exifData.latitude,
           longitude: state.exifData.longitude,
         };
+        console.log('GPS 위치 정보 추가됨:', uploadData.location);
       }
+    } else {
+      console.log('EXIF 데이터가 없음');
     }
 
     // 썸네일 데이터 추가

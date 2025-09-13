@@ -15,6 +15,10 @@ interface StoredPhotoData {
     longitude: number;
   };
   uploadedAt: Date;
+  exifData?: {
+    timestamp?: string;
+    [key: string]: string | number | boolean | undefined;
+  };
 }
 
 interface PhotoModalProps {
@@ -88,7 +92,14 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
     };
   };
 
-  const dateTime = formatDateTime(photo.uploadedAt);
+  // EXIF 촬영시간이 있으면 우선 사용, 없으면 업로드 시간 사용
+  const actualCaptureTime = photo.exifData?.timestamp 
+    ? new Date(photo.exifData.timestamp) 
+    : photo.uploadedAt;
+  
+  const dateTime = formatDateTime(actualCaptureTime);
+  const isExifTime = !!photo.exifData?.timestamp;
+  
 
   return (
     <div className="photo-modal-overlay" onClick={onClose}>
@@ -152,13 +163,13 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
               )}
               
               <div className="info-item">
-                <span className="info-label">📅 업로드 날짜:</span>
-                <span className="info-value">{dateTime.date}</span>
+                <span className="info-label">📅 {isExifTime ? '촬영 날짜' : '업로드 날짜'}:</span>
+                <span className="info-value">{dateTime.date} {isExifTime && '(EXIF)'}</span>
               </div>
               
               <div className="info-item">
-                <span className="info-label">⏰ 업로드 시간:</span>
-                <span className="info-value">{dateTime.time}</span>
+                <span className="info-label">⏰ {isExifTime ? '촬영 시간' : '업로드 시간'}:</span>
+                <span className="info-value">{dateTime.time} {isExifTime && '(EXIF)'}</span>
               </div>
               
               <div className="info-item">
