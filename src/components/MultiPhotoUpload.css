@@ -55,6 +55,63 @@
   border-color: var(--primary-color);
 }
 
+/* 개별 파일 설명 입력 */
+.file-description {
+  margin-top: 8px;
+}
+
+.description-input-small {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 0.85rem;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  transition: border-color 0.2s ease;
+}
+
+.description-input-small:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.description-input-small::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.8;
+}
+
+/* 필수 입력 표시 */
+.required {
+  color: #ef4444;
+  font-weight: bold;
+}
+
+/* 검증 메시지 */
+.validation-message {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 4px;
+  color: #ef4444;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* 비활성화된 버튼 */
+.upload-button.disabled {
+  background: var(--text-tertiary) !important;
+  cursor: not-allowed !important;
+  opacity: 0.6;
+}
+
+.upload-button.disabled:hover {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
 /* 드래그 앤 드롭 영역 */
 .drop-zone {
   border: 2px dashed var(--border-color);

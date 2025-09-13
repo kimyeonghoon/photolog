@@ -298,8 +298,12 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
                   </div>
                   
                   <div className="photo-info">
-                    {photo.description && (
+                    {photo.description && photo.description.trim() ? (
                       <p className="photo-description">{photo.description}</p>
+                    ) : (
+                      <p className="photo-description" style={{ opacity: 0.7, fontStyle: 'italic' }}>
+                        설명 없음
+                      </p>
                     )}
                     
                     {photo.location && (

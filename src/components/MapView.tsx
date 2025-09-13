@@ -166,8 +166,10 @@ export const MapView: React.FC<MapViewProps> = ({ className, photos = [] }) => {
         const markerElement = marker.getElement();
         if (markerElement) {
           markerElement.classList.add('marker-hover');
-          // 툴팁 표시
-          const tooltipContent = photo.description || '제목 없음';
+          // 툴팁 표시 - description이 비어있으면 설명 없음으로 표시
+          const tooltipContent = (photo.description && photo.description.trim()) 
+            ? photo.description 
+            : '설명 없음';
           marker.bindTooltip(tooltipContent, {
             permanent: false,
             direction: 'top',
@@ -204,16 +206,20 @@ export const MapView: React.FC<MapViewProps> = ({ className, photos = [] }) => {
       const isExifTime = photo.exifData?.timestamp ? true : false;
       const timeLabel = isExifTime ? '촬영' : '업로드';
       
+      const displayDescription = (photo.description && photo.description.trim()) 
+        ? photo.description 
+        : '설명 없음';
+      
       const popupContent = `
         <div class="photo-popup">
           <div class="photo-popup-image">
             ${photo.thumbnail 
-              ? `<img src="${photo.thumbnail.dataUrl}" alt="${photo.description}" />` 
+              ? `<img src="${photo.thumbnail.dataUrl}" alt="${displayDescription}" />` 
               : `<div class="photo-placeholder">📸</div>`
             }
           </div>
           <div class="photo-popup-info">
-            <h4>${photo.description || '제목 없음'}</h4>
+            <h4>${displayDescription}</h4>
             <p>📅 ${timeLabel}: ${captureDateTime.toLocaleDateString('ko-KR')} ${captureDateTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</p>
             <p>📍 ${photo.location.latitude.toFixed(4)}, ${photo.location.longitude.toFixed(4)}</p>
             ${!isExifTime ? '<p class="time-note">⚠️ EXIF 촬영 시간 없음</p>' : ''}

@@ -314,7 +314,15 @@ export const MultiPhotoUpload: React.FC<MultiPhotoUploadProps> = ({ onUpload, on
   const handleUploadComplete = useCallback(() => {
     const completedFiles = state.files.filter(f => f.status === 'completed');
     if (completedFiles.length > 0) {
-      onUpload(completedFiles);
+      // 설명 조합 로직: 개별 설명이 있으면 "전체설명 - 개별설명", 없으면 "전체설명"
+      const filesWithDescriptions = completedFiles.map(file => ({
+        ...file,
+        description: (file.description && file.description.trim()) 
+          ? `${state.globalDescription} - ${file.description.trim()}`
+          : state.globalDescription
+      }));
+      
+      onUpload(filesWithDescriptions);
       
       // URL 정리 후 초기화
       setState(prev => {
@@ -324,10 +332,10 @@ export const MultiPhotoUpload: React.FC<MultiPhotoUploadProps> = ({ onUpload, on
           }
         });
         
-        return { ...prev, files: [] };
+        return { ...prev, files: [], globalDescription: '' };
       });
     }
-  }, [state.files, onUpload]);
+  }, [state.files, state.globalDescription, onUpload]);
 
   // 모든 파일 처리 시작
   const processAllFiles = useCallback(async () => {
@@ -408,19 +416,25 @@ export const MultiPhotoUpload: React.FC<MultiPhotoUploadProps> = ({ onUpload, on
         <p>여러 장의 사진을 한 번에 업로드하세요</p>
       </div>
 
-      {/* 공통 설명 입력 */}
+      {/* 전체 설명 입력 (필수) */}
       <div className="global-description">
         <label htmlFor="globalDescription">
-          공통 설명 (선택사항)
+          전체 설명 <span className="required">*</span>
         </label>
         <input
           id="globalDescription"
           type="text"
           value={state.globalDescription}
           onChange={(e) => setState(prev => ({ ...prev, globalDescription: e.target.value }))}
-          placeholder="예: 제주도 여행 2024"
+          placeholder="예: 제주도 여행 2024 (필수 입력)"
           maxLength={100}
+          required
         />
+        {!state.globalDescription.trim() && state.files.length > 0 && (
+          <div className="validation-message">
+            ⚠️ 전체 설명을 입력해야 업로드할 수 있습니다
+          </div>
+        )}
       </div>
 
       {/* 드래그 앤 드롭 영역 */}
@@ -460,7 +474,9 @@ export const MultiPhotoUpload: React.FC<MultiPhotoUploadProps> = ({ onUpload, on
               {pendingCount > 0 && !state.isProcessing && (
                 <button 
                   onClick={startProcessAndUpload}
-                  className="upload-button primary"
+                  className={`upload-button ${state.globalDescription.trim() ? 'primary' : 'disabled'}`}
+                  disabled={!state.globalDescription.trim()}
+                  title={!state.globalDescription.trim() ? '전체 설명을 입력해주세요' : ''}
                 >
                   {pendingCount}장 업로드
                 </button>
@@ -557,6 +573,27 @@ export const MultiPhotoUpload: React.FC<MultiPhotoUploadProps> = ({ onUpload, on
                     {(fileData.file.size / 1024 / 1024).toFixed(1)} MB
                   </div>
                   
+                  {/* 개별 설명 입력 */}
+                  <div className="file-description">
+                    <input
+                      type="text"
+                      placeholder="이 사진의 설명 (선택사항)"
+                      value={fileData.description || ''}
+                      onChange={(e) => {
+                        setState(prev => ({
+                          ...prev,
+                          files: prev.files.map(f => 
+                            f.id === fileData.id 
+                              ? { ...f, description: e.target.value }
+                              : f
+                          )
+                        }));
+                      }}
+                      maxLength={100}
+                      className="description-input-small"
+                    />
+                  </div>
+
                   {/* GPS 정보 표시 */}
                   {fileData.location && (
                     <div className="file-location">
