@@ -82,20 +82,49 @@ export const MultiPhotoUpload: React.FC<MultiPhotoUploadProps> = ({ onUpload, on
   const extractExifData = useCallback(async (file: File): Promise<ExifData | null> => {
     try {
       const exif = await exifr.parse(file, {
-        pick: ['GPS', 'DateTimeOriginal', 'DateTime', 'CreateDate', 'DateTimeDigitized', 'Make', 'Model', 'LensModel']
+        pick: ['GPS', 'GPSLatitude', 'GPSLongitude', 'GPSLatitudeRef', 'GPSLongitudeRef', 
+               'DateTimeOriginal', 'DateTime', 'CreateDate', 'DateTimeDigitized', 
+               'Make', 'Model', 'LensModel'],
+        translateKeys: false,
+        mergeOutput: false
       });
       if (!exif) return null;
 
 
       const exifData: ExifData = {};
 
-      // GPS 정보 추출
-      const lat = exif.latitude || exif.GPSLatitude;
-      const lng = exif.longitude || exif.GPSLongitude;
+      // GPS 정보 추출 - 여러 방법으로 시도
+      let lat: number | undefined;
+      let lng: number | undefined;
       
-      if (lat && lng) {
+      // 방법 1: 자동 변환된 좌표
+      if (exif.latitude && exif.longitude) {
+        lat = exif.latitude;
+        lng = exif.longitude;
+      }
+      // 방법 2: 직접 GPS 태그에서 추출
+      else if (exif.GPSLatitude && exif.GPSLongitude) {
+        lat = exif.GPSLatitude;
+        lng = exif.GPSLongitude;
+        
+        // GPS 참조 방향 확인
+        if (exif.GPSLatitudeRef === 'S') lat = -lat;
+        if (exif.GPSLongitudeRef === 'W') lng = -lng;
+      }
+      // 방법 3: 숫자 태그로 시도 (1, 2, 3, 4 = GPSLatitudeRef, GPSLatitude, GPSLongitudeRef, GPSLongitude)
+      else if (exif[2] && exif[4]) {
+        lat = exif[2];
+        lng = exif[4];
+        if (exif[1] === 'S') lat = -lat;
+        if (exif[3] === 'W') lng = -lng;
+      }
+      
+      if (lat && lng && !isNaN(lat) && !isNaN(lng)) {
         exifData.latitude = lat;
         exifData.longitude = lng;
+        console.log('GPS 정보 추출 성공:', { latitude: lat, longitude: lng });
+      } else {
+        console.log('GPS 정보 없음 또는 추출 실패');
       }
 
       // 촬영 시간 - GPSChecker와 동일한 방식으로 우선순위 적용

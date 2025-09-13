@@ -54,12 +54,29 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
     setSortOrder(order);
   };
 
-  // 사진 정렬
+  // 실제 촬영시간 또는 업로드 시간을 가져오는 함수
+  const getPhotoTime = (photo: StoredPhotoData): Date => {
+    // EXIF 촬영시간이 있으면 우선 사용
+    if (photo.exifData?.timestamp) {
+      try {
+        return new Date(photo.exifData.timestamp);
+      } catch (error) {
+        console.warn('EXIF timestamp 파싱 실패:', photo.exifData.timestamp, error);
+      }
+    }
+    // EXIF 촬영시간이 없으면 업로드 시간 사용
+    return new Date(photo.uploadedAt);
+  };
+
+  // 사진 정렬 (EXIF 촬영시간 우선, 없으면 업로드 시간)
   const sortedPhotos = [...photos].sort((a, b) => {
+    const timeA = getPhotoTime(a);
+    const timeB = getPhotoTime(b);
+    
     if (sortOrder === 'newest') {
-      return new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime();
+      return timeB.getTime() - timeA.getTime();
     } else {
-      return new Date(a.uploadedAt).getTime() - new Date(b.uploadedAt).getTime();
+      return timeA.getTime() - timeB.getTime();
     }
   });
 
@@ -71,14 +88,14 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
     const photosWithLocation = photos.filter(p => p.location).length;
     const photosWithDescription = photos.filter(p => p.description && p.description.trim()).length;
 
-    // 최근 업로드 날짜
-    const latestUpload = photos.reduce((latest, photo) => 
-      new Date(photo.uploadedAt) > new Date(latest.uploadedAt) ? photo : latest
+    // 최근 촬영/업로드 날짜
+    const latestPhoto = photos.reduce((latest, photo) => 
+      getPhotoTime(photo) > getPhotoTime(latest) ? photo : latest
     );
 
-    // 첫 업로드 날짜
-    const firstUpload = photos.reduce((earliest, photo) => 
-      new Date(photo.uploadedAt) < new Date(earliest.uploadedAt) ? photo : earliest
+    // 첫 촬영/업로드 날짜
+    const firstPhoto = photos.reduce((earliest, photo) => 
+      getPhotoTime(photo) < getPhotoTime(earliest) ? photo : earliest
     );
 
     // 총 파일 크기
@@ -96,8 +113,8 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
       totalPhotos,
       photosWithLocation,
       photosWithDescription,
-      latestUpload,
-      firstUpload,
+      latestPhoto,
+      firstPhoto,
       totalSize,
       thisMonthPhotos,
       locationPercentage: Math.round((photosWithLocation / totalPhotos) * 100),
@@ -195,13 +212,13 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
                 </div>
                 
                 <div className="detail-item">
-                  <span className="detail-label">📅 첫 업로드:</span>
-                  <span className="detail-value">{stats.firstUpload.uploadedAt.toLocaleDateString('ko-KR')}</span>
+                  <span className="detail-label">📅 첫 사진:</span>
+                  <span className="detail-value">{getPhotoTime(stats.firstPhoto).toLocaleDateString('ko-KR')}</span>
                 </div>
                 
                 <div className="detail-item">
-                  <span className="detail-label">🕒 최근 업로드:</span>
-                  <span className="detail-value">{stats.latestUpload.uploadedAt.toLocaleDateString('ko-KR')}</span>
+                  <span className="detail-label">🕒 최근 사진:</span>
+                  <span className="detail-value">{getPhotoTime(stats.latestPhoto).toLocaleDateString('ko-KR')}</span>
                 </div>
               </div>
             </div>
@@ -313,7 +330,12 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
                     )}
                     
                     <p className="photo-date">
-                      📅 {photo.uploadedAt.toLocaleDateString('ko-KR')}
+                      📅 {getPhotoTime(photo).toLocaleDateString('ko-KR')}
+                      {photo.exifData?.timestamp && (
+                        <span className="date-type" style={{ fontSize: '0.8em', opacity: 0.7, marginLeft: '4px' }}>
+                          (촬영일)
+                        </span>
+                      )}
                     </p>
                   </div>
                 </div>
