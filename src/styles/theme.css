@@ -26,6 +26,16 @@
   --accent-yellow: #fef08a;
   --accent-yellow-text: #a16207;
   
+  /* 호환성을 위한 추가 색상 변수 */
+  --primary-color: #3b82f6;
+  --primary-hover: #2563eb;
+  --success-color: #10b981;
+  --success-hover: #059669;
+  --warning-color: #f59e0b;
+  --error-color: #ef4444;
+  --error-hover: #dc2626;
+  --border-color: #e5e7eb;
+  
   /* 그림자 */
   --shadow: rgba(0, 0, 0, 0.1);
   --shadow-hover: rgba(0, 0, 0, 0.15);
@@ -72,6 +82,16 @@
   --accent-green: #10b981;
   --accent-yellow: #fbbf24;
   --accent-yellow-text: #1f2937;
+  
+  /* 호환성을 위한 추가 색상 변수 */
+  --primary-color: #60a5fa;
+  --primary-hover: #3b82f6;
+  --success-color: #10b981;
+  --success-hover: #059669;
+  --warning-color: #fbbf24;
+  --error-color: #f87171;
+  --error-hover: #ef4444;
+  --border-color: #374151;
   
   /* 그림자 */
   --shadow: rgba(0, 0, 0, 0.3);

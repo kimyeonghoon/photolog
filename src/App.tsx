@@ -7,6 +7,7 @@ import { ThemeProvider } from './contexts/ThemeContext'
 import { ThemeToggle } from './components/ThemeToggle'
 import './App.css'
 import './components/PhotoUpload.css'
+import './components/MultiPhotoUpload.css'
 import './styles/theme.css'
 
 // 타입 정의 - 업로드 시 받는 데이터
@@ -38,21 +39,26 @@ function App() {
   const [uploadedPhotos, setUploadedPhotos] = useState<StoredPhotoData[]>([])
   const [currentPage, setCurrentPage] = useState<'home' | 'upload' | 'map' | 'test'>('home')
 
-  const handleUpload = (data: PhotoUploadData) => {
-    console.log('업로드된 사진 데이터:', data)
+  const handleUpload = (dataArray: PhotoUploadData[] | PhotoUploadData) => {
+    // 단일 파일과 다중 파일 모두 지원 (하위 호환성)
+    const dataList = Array.isArray(dataArray) ? dataArray : [dataArray];
+    
+    console.log(`업로드된 사진 데이터 ${dataList.length}개:`, dataList);
     
     // 업로드 시간 추가
-    const photoWithTimestamp: StoredPhotoData = {
+    const photosWithTimestamp: StoredPhotoData[] = dataList.map(data => ({
       ...data,
       uploadedAt: new Date()
-    };
+    }));
     
-    setUploadedPhotos(prev => [photoWithTimestamp, ...prev]) // 최신 사진이 맨 앞에 오도록
+    setUploadedPhotos(prev => [...photosWithTimestamp, ...prev]) // 최신 사진들이 맨 앞에 오도록
     
     // 업로드 완료 후 홈으로 이동
     setCurrentPage('home')
     
-    alert(`사진이 업로드되었습니다!\n설명: ${data.description}\n위치: ${data.location ? '위치 정보 포함' : '위치 정보 없음'}`)
+    // 성공 메시지
+    const locationCount = dataList.filter(d => d.location).length;
+    alert(`${dataList.length}장의 사진이 업로드되었습니다!\n위치 정보: ${locationCount}장 포함`)
   }
 
   const handleError = (error: string) => {

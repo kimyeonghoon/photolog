@@ -1,0 +1,591 @@
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import exifr from 'exifr';
+import { 
+  createThumbnail, 
+  canCreateThumbnail,
+  type ThumbnailResult
+} from '../utils/thumbnailGenerator';
+import './MultiPhotoUpload.css';
+
+// 타입 정의
+interface FileUploadData {
+  id: string;
+  file: File;
+  description: string;
+  location?: {
+    latitude: number;
+    longitude: number;
+  };
+  thumbnail?: ThumbnailResult;
+  exifData?: ExifData | null;
+  status: 'pending' | 'processing' | 'completed' | 'error';
+  error?: string;
+  progress: number;
+  previewUrl?: string; // 즉시 미리보기용 URL
+}
+
+interface ExifData {
+  latitude?: number;
+  longitude?: number;
+  timestamp?: string;
+  camera?: string;
+  lens?: string;
+  [key: string]: string | number | boolean | undefined;
+}
+
+interface MultiPhotoUploadProps {
+  onUpload: (data: FileUploadData[]) => void;
+  onError: (error: string) => void;
+}
+
+interface UploadState {
+  files: FileUploadData[];
+  isProcessing: boolean;
+  totalProgress: number;
+  globalDescription: string;
+  isDragOver: boolean;
+}
+
+const SUPPORTED_FORMATS = ['image/jpeg', 'image/jpg', 'image/png', 'image/heic'];
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILES = 50; // 최대 파일 수 제한
+
+export const MultiPhotoUpload: React.FC<MultiPhotoUploadProps> = ({ onUpload, onError }) => {
+  const [state, setState] = useState<UploadState>({
+    files: [],
+    isProcessing: false,
+    totalProgress: 0,
+    globalDescription: '',
+    isDragOver: false,
+  });
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const dropZoneRef = useRef<HTMLDivElement>(null);
+
+  // 파일 ID 생성 함수
+  const generateFileId = () => {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+  };
+
+  // 파일 유효성 검사
+  const validateFile = useCallback((file: File): string | null => {
+    if (!SUPPORTED_FORMATS.includes(file.type)) {
+      return '지원되지 않는 파일 형식입니다. JPG, PNG, HEIC 파일만 업로드 가능합니다.';
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      return '파일 크기가 너무 큽니다. 10MB 이하의 파일만 업로드 가능합니다.';
+    }
+    return null;
+  }, []);
+
+  // EXIF 데이터 추출
+  const extractExifData = useCallback(async (file: File): Promise<ExifData | null> => {
+    try {
+      const exif = await exifr.parse(file);
+      if (!exif) return null;
+
+      const exifData: ExifData = {};
+
+      // GPS 정보 추출
+      if (exif.latitude && exif.longitude) {
+        exifData.latitude = exif.latitude;
+        exifData.longitude = exif.longitude;
+      }
+
+      // 촬영 시간
+      if (exif.DateTimeOriginal) {
+        exifData.timestamp = exif.DateTimeOriginal.toISOString();
+      }
+
+      // 카메라 정보
+      if (exif.Make || exif.Model) {
+        exifData.camera = [exif.Make, exif.Model].filter(Boolean).join(' ');
+      }
+
+      // 렌즈 정보
+      if (exif.LensModel) {
+        exifData.lens = exif.LensModel;
+      }
+
+      return exifData;
+    } catch (error) {
+      console.warn('EXIF 데이터 추출 실패:', error);
+      return null;
+    }
+  }, []);
+
+  // 썸네일 생성
+  const generateThumbnail = useCallback(async (file: File): Promise<ThumbnailResult | null> => {
+    const canCreate = canCreateThumbnail(file);
+    if (!canCreate.canCreate) {
+      console.warn(`썸네일 생성 불가: ${canCreate.reason}`);
+      return null;
+    }
+
+    try {
+      return await createThumbnail(file, {
+        width: 200,
+        height: 200,
+        mode: 'crop',
+        quality: 0.8
+      });
+    } catch (error) {
+      console.warn('썸네일 생성 실패:', error);
+      return null;
+    }
+  }, []);
+
+  // 개별 파일 처리
+  const processFile = useCallback(async (fileData: FileUploadData) => {
+    // 상태를 processing으로 변경
+    setState(prev => ({
+      ...prev,
+      files: prev.files.map(f => 
+        f.id === fileData.id ? { ...f, status: 'processing', progress: 10 } : f
+      )
+    }));
+
+    try {
+      // EXIF 데이터 추출
+      const exifData = await extractExifData(fileData.file);
+      
+      setState(prev => ({
+        ...prev,
+        files: prev.files.map(f => 
+          f.id === fileData.id ? { ...f, progress: 50, exifData } : f
+        )
+      }));
+
+      // GPS 정보 설정
+      const location = exifData?.latitude && exifData?.longitude 
+        ? { latitude: exifData.latitude, longitude: exifData.longitude }
+        : undefined;
+
+      // 썸네일 생성
+      const thumbnail = await generateThumbnail(fileData.file);
+      
+      // 완료 상태로 변경
+      setState(prev => ({
+        ...prev,
+        files: prev.files.map(f => 
+          f.id === fileData.id 
+            ? { 
+                ...f, 
+                status: 'completed', 
+                progress: 100, 
+                location,
+                thumbnail: thumbnail || undefined,
+                exifData 
+              }
+            : f
+        )
+      }));
+
+    } catch (error) {
+      console.error('파일 처리 실패:', error);
+      setState(prev => ({
+        ...prev,
+        files: prev.files.map(f => 
+          f.id === fileData.id 
+            ? { ...f, status: 'error', error: '파일 처리 중 오류가 발생했습니다.' }
+            : f
+        )
+      }));
+    }
+  }, [extractExifData, generateThumbnail]);
+
+  // 파일 추가 (즉시 미리보기 생성)
+  const addFiles = useCallback((files: File[]) => {
+    const validFiles: File[] = [];
+    const errors: string[] = [];
+
+    // 파일 수 제한 확인
+    if (state.files.length + files.length > MAX_FILES) {
+      onError(`최대 ${MAX_FILES}개의 파일까지 업로드할 수 있습니다.`);
+      return;
+    }
+
+    // 각 파일 유효성 검사
+    files.forEach(file => {
+      const error = validateFile(file);
+      if (error) {
+        errors.push(`${file.name}: ${error}`);
+      } else {
+        validFiles.push(file);
+      }
+    });
+
+    if (errors.length > 0) {
+      onError(errors.join('\n'));
+    }
+
+    if (validFiles.length > 0) {
+      const newFileData: FileUploadData[] = validFiles.map(file => {
+        // 즉시 미리보기 URL 생성
+        const previewUrl = URL.createObjectURL(file);
+        
+        return {
+          id: generateFileId(),
+          file,
+          description: state.globalDescription,
+          status: 'pending',
+          progress: 0,
+          previewUrl // 즉시 미리보기용 URL 추가
+        };
+      });
+
+      setState(prev => ({
+        ...prev,
+        files: [...prev.files, ...newFileData]
+      }));
+    }
+  }, [state.files.length, state.globalDescription, validateFile, onError]);
+
+  // 파일 선택 핸들러
+  const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    if (files.length > 0) {
+      addFiles(files);
+    }
+    // 입력 값 초기화 (같은 파일 다시 선택 가능)
+    event.target.value = '';
+  }, [addFiles]);
+
+  // 드래그 앤 드롭 핸들러들
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setState(prev => ({ ...prev, isDragOver: true }));
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    if (dropZoneRef.current && !dropZoneRef.current.contains(e.relatedTarget as Node)) {
+      setState(prev => ({ ...prev, isDragOver: false }));
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setState(prev => ({ ...prev, isDragOver: false }));
+    
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      addFiles(files);
+    }
+  }, [addFiles]);
+
+  // 개별 파일 삭제 (URL 정리 포함)
+  const removeFile = useCallback((fileId: string) => {
+    setState(prev => {
+      const fileToRemove = prev.files.find(f => f.id === fileId);
+      if (fileToRemove?.previewUrl) {
+        URL.revokeObjectURL(fileToRemove.previewUrl);
+      }
+      
+      return {
+        ...prev,
+        files: prev.files.filter(f => f.id !== fileId)
+      };
+    });
+  }, []);
+
+  // 전체 파일 삭제 (URL 정리 포함)
+  const clearAllFiles = useCallback(() => {
+    setState(prev => {
+      // 모든 preview URL 정리
+      prev.files.forEach(file => {
+        if (file.previewUrl) {
+          URL.revokeObjectURL(file.previewUrl);
+        }
+      });
+      
+      return {
+        ...prev,
+        files: []
+      };
+    });
+  }, []);
+
+  // 업로드 완료 처리 (먼저 정의)
+  const handleUploadComplete = useCallback(() => {
+    const completedFiles = state.files.filter(f => f.status === 'completed');
+    if (completedFiles.length > 0) {
+      onUpload(completedFiles);
+      
+      // URL 정리 후 초기화
+      setState(prev => {
+        prev.files.forEach(file => {
+          if (file.previewUrl) {
+            URL.revokeObjectURL(file.previewUrl);
+          }
+        });
+        
+        return { ...prev, files: [] };
+      });
+    }
+  }, [state.files, onUpload]);
+
+  // 모든 파일 처리 시작
+  const processAllFiles = useCallback(async () => {
+    const pendingFiles = state.files.filter(f => f.status === 'pending');
+    if (pendingFiles.length === 0) return;
+
+    setState(prev => ({ ...prev, isProcessing: true }));
+
+    try {
+      // 배치 처리 (4개씩 병렬 처리)
+      const batchSize = 4;
+      for (let i = 0; i < pendingFiles.length; i += batchSize) {
+        const batch = pendingFiles.slice(i, i + batchSize);
+        await Promise.all(batch.map(processFile));
+      }
+    } catch (error) {
+      console.error('파일 처리 중 오류:', error);
+    } finally {
+      setState(prev => ({ ...prev, isProcessing: false }));
+    }
+  }, [state.files, processFile]);
+
+  // 처리 완료 후 자동 업로드를 위한 상태
+  const [shouldAutoUpload, setShouldAutoUpload] = useState(false);
+
+  // 처리 시작 함수
+  const startProcessAndUpload = useCallback(async () => {
+    setShouldAutoUpload(true);
+    await processAllFiles();
+  }, [processAllFiles]);
+
+  // 처리 완료 후 자동 업로드 감지
+  useEffect(() => {
+    if (shouldAutoUpload && !state.isProcessing) {
+      const completedFiles = state.files.filter(f => f.status === 'completed');
+      const pendingFiles = state.files.filter(f => f.status === 'pending');
+      
+      if (completedFiles.length > 0 && pendingFiles.length === 0) {
+        // 모든 파일 처리 완료, 자동 업로드
+        setShouldAutoUpload(false);
+        handleUploadComplete();
+      }
+    }
+  }, [state.isProcessing, state.files, shouldAutoUpload, handleUploadComplete]);
+
+  // 전체 진행률 계산
+  useEffect(() => {
+    if (state.files.length === 0) {
+      setState(prev => ({ ...prev, totalProgress: 0 }));
+      return;
+    }
+
+    const totalProgress = state.files.reduce((sum, file) => sum + file.progress, 0);
+    const averageProgress = Math.round(totalProgress / state.files.length);
+    
+    setState(prev => ({ ...prev, totalProgress: averageProgress }));
+  }, [state.files]);
+
+  // 컴포넌트 언마운트 시 URL 정리
+  useEffect(() => {
+    return () => {
+      state.files.forEach(file => {
+        if (file.previewUrl) {
+          URL.revokeObjectURL(file.previewUrl);
+        }
+      });
+    };
+  }, [state.files]);
+
+  const pendingCount = state.files.filter(f => f.status === 'pending').length;
+  const completedCount = state.files.filter(f => f.status === 'completed').length;
+  const errorCount = state.files.filter(f => f.status === 'error').length;
+
+  return (
+    <div className="multi-photo-upload">
+      <div className="upload-header">
+        <h2>📸 사진 업로드</h2>
+        <p>여러 장의 사진을 한 번에 업로드하세요</p>
+      </div>
+
+      {/* 공통 설명 입력 */}
+      <div className="global-description">
+        <label htmlFor="globalDescription">
+          공통 설명 (선택사항)
+        </label>
+        <input
+          id="globalDescription"
+          type="text"
+          value={state.globalDescription}
+          onChange={(e) => setState(prev => ({ ...prev, globalDescription: e.target.value }))}
+          placeholder="예: 제주도 여행 2024"
+          maxLength={100}
+        />
+      </div>
+
+      {/* 드래그 앤 드롭 영역 */}
+      <div 
+        ref={dropZoneRef}
+        className={`drop-zone ${state.isDragOver ? 'drag-over' : ''}`}
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+        onClick={() => fileInputRef.current?.click()}
+      >
+        <div className="drop-zone-content">
+          <div className="drop-zone-icon">📁</div>
+          <div className="drop-zone-text">
+            <strong>파일을 끌어다 놓거나 클릭하여 선택하세요</strong>
+            <p>JPG, PNG, HEIC 파일 지원 (최대 10MB, {MAX_FILES}개까지)</p>
+          </div>
+        </div>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={handleFileSelect}
+          style={{ display: 'none' }}
+        />
+      </div>
+
+      {/* 파일 목록 */}
+      {state.files.length > 0 && (
+        <div className="files-section">
+          <div className="files-header">
+            <h3>선택된 파일 ({state.files.length}개)</h3>
+            <div className="files-actions">
+              {pendingCount > 0 && !state.isProcessing && (
+                <button 
+                  onClick={startProcessAndUpload}
+                  className="upload-button primary"
+                >
+                  {pendingCount}장 업로드
+                </button>
+              )}
+              {state.isProcessing && (
+                <button disabled className="upload-button processing">
+                  처리 중... ({completedCount}/{state.files.length})
+                </button>
+              )}
+              {completedCount > 0 && pendingCount === 0 && !state.isProcessing && (
+                <button 
+                  onClick={handleUploadComplete}
+                  className="upload-button success"
+                >
+                  포토로그에 추가
+                </button>
+              )}
+              <button 
+                onClick={clearAllFiles}
+                className="clear-button"
+                disabled={state.isProcessing}
+              >
+                전체 삭제
+              </button>
+            </div>
+          </div>
+
+          {/* 전체 진행률 */}
+          {state.isProcessing && (
+            <div className="total-progress">
+              <div className="progress-bar">
+                <div 
+                  className="progress-fill"
+                  style={{ width: `${state.totalProgress}%` }}
+                />
+              </div>
+              <div className="progress-text">
+                전체 진행률: {state.totalProgress}% 
+                (완료: {completedCount}, 대기: {pendingCount}, 오류: {errorCount})
+              </div>
+            </div>
+          )}
+
+          {/* 파일 그리드 */}
+          <div className="files-grid">
+            {state.files.map(fileData => (
+              <div key={fileData.id} className={`file-item ${fileData.status}`}>
+                <div className="file-preview">
+                  {fileData.thumbnail ? (
+                    <img 
+                      src={fileData.thumbnail.dataUrl} 
+                      alt={fileData.file.name}
+                    />
+                  ) : fileData.previewUrl ? (
+                    <img 
+                      src={fileData.previewUrl}
+                      alt={fileData.file.name}
+                      style={{ opacity: fileData.status === 'processing' ? 0.7 : 1 }}
+                    />
+                  ) : (
+                    <div className="preview-placeholder">
+                      📷
+                    </div>
+                  )}
+                  
+                  {/* 상태 오버레이 */}
+                  <div className="file-status">
+                    {fileData.status === 'processing' && (
+                      <div className="status-processing">⏳</div>
+                    )}
+                    {fileData.status === 'completed' && (
+                      <div className="status-completed">✅</div>
+                    )}
+                    {fileData.status === 'error' && (
+                      <div className="status-error">❌</div>
+                    )}
+                  </div>
+
+                  {/* 삭제 버튼 */}
+                  <button 
+                    className="remove-file"
+                    onClick={() => removeFile(fileData.id)}
+                    title="파일 제거"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <div className="file-info">
+                  <div className="file-name" title={fileData.file.name}>
+                    {fileData.file.name}
+                  </div>
+                  <div className="file-size">
+                    {(fileData.file.size / 1024 / 1024).toFixed(1)} MB
+                  </div>
+                  
+                  {/* GPS 정보 표시 */}
+                  {fileData.location && (
+                    <div className="file-location">
+                      📍 GPS 정보 있음
+                    </div>
+                  )}
+                  
+                  {/* 에러 메시지 */}
+                  {fileData.error && (
+                    <div className="file-error">
+                      {fileData.error}
+                    </div>
+                  )}
+
+                  {/* 진행률 */}
+                  {fileData.status === 'processing' && (
+                    <div className="file-progress">
+                      <div 
+                        className="progress-bar small"
+                        style={{ width: `${fileData.progress}%` }}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
