@@ -4,7 +4,7 @@
   background: var(--bg-secondary);
   border-radius: 20px;
   border: 1px solid var(--border-color);
-  margin-bottom: var(--spacing-xl);
+  margin-bottom: 60px;
   box-shadow: var(--shadow-card);
 }
 
