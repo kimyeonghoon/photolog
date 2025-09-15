@@ -82,6 +82,13 @@ backend/tests/*.jpg
 backend/tests/*.png
 backend/tests/*.jpeg
 
+# OCI test and configuration files (may contain sensitive info)
+backend/tests/test_oci_connection.py
+backend/tests/test_bucket_list.py
+backend/tests/create_bucket.py
+backend/tests/test_storage_service.py
+backend/oci_setup_guide.md
+
 # Temporary files
 *.tmp
 *.temp

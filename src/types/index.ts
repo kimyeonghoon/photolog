@@ -69,5 +69,13 @@ export interface UnifiedPhotoData {
     longitude: number;
   };
   exifData?: ExifData | null;
-  uploadedAt: Date;
+  uploadedAt?: Date;
+
+  // 서버에서만 제공되는 추가 데이터
+  serverData?: {
+    fileUrl: string;
+    thumbnailUrls: { [key: string]: string };
+    uploadTimestamp: string;
+    fileSize: number;
+  };
 }

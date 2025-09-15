@@ -292,6 +292,121 @@ def main_test():
             print(f"성공: {summary['success']}/{summary['total']}")
             print(f"스토리지 타입: {summary['storage_type']}")
 
+
+def get_photo_list(limit: int = 20, page: str = None, order_by: str = 'upload_timestamp', order: str = 'DESC') -> dict:
+    """
+    사진 목록 조회 API 함수
+
+    Args:
+        limit: 조회할 개수
+        page: 페이지 토큰
+        order_by: 정렬 기준
+        order: 정렬 순서
+
+    Returns:
+        dict: 사진 목록과 페이지 정보
+    """
+    try:
+        # 통합 스토리지 서비스 초기화
+        storage_type = os.getenv('STORAGE_TYPE', 'LOCAL')
+        service = UnifiedStorageService(storage_type)
+
+        # 사진 목록 조회
+        result = service.list_photos(limit, page, order_by, order)
+
+        if result['success']:
+            # 프론트엔드가 기대하는 형식으로 변환
+            photos_data = []
+            for photo in result['photos']:
+                # photo_id를 id로 변경하고 기타 필드 조정
+                photo_data = {
+                    "id": photo['photo_id'],  # photo_id를 id로 변경
+                    "filename": photo['filename'],
+                    "description": photo['description'],
+                    "file_url": photo['file_url'],
+                    "thumbnail_urls": photo['thumbnail_urls'],
+                    "file_size": photo['file_size'] or 0,
+                    "content_type": "image/jpeg",  # 기본값
+                    "upload_timestamp": photo['upload_timestamp'] or "",
+                    "location": photo['location'],
+                    "exif_data": photo['exif_data'] or {}
+                }
+                photos_data.append(photo_data)
+
+            response_data = {
+                "photos": photos_data,
+                "count": len(photos_data),
+                "total": len(photos_data),  # 현재는 전체 개수와 동일
+                "has_more": False  # 현재는 페이징 미구현
+            }
+
+            return {
+                "success": True,
+                "message": "사진 목록 조회 성공",
+                "data": response_data,
+                "timestamp": get_current_timestamp()
+            }
+        else:
+            return {
+                "success": False,
+                "message": f"사진 목록 조회 실패: {result.get('error')}",
+                "timestamp": get_current_timestamp()
+            }
+
+    except Exception as e:
+        return create_api_response(500, None, f"사진 목록 조회 중 오류: {str(e)}")
+
+
+def get_photo_metadata(photo_id: str) -> dict:
+    """
+    특정 사진 메타데이터 조회 API 함수
+
+    Args:
+        photo_id: 사진 ID
+
+    Returns:
+        dict: 사진 메타데이터
+    """
+    try:
+        storage_type = os.getenv('STORAGE_TYPE', 'LOCAL')
+        service = UnifiedStorageService(storage_type)
+        metadata = service.get_photo_metadata(photo_id)
+
+        if metadata:
+            return create_api_response(200, {"photo": metadata}, "사진 메타데이터 조회 성공")
+        else:
+            return create_api_response(404, None, "사진을 찾을 수 없습니다")
+
+    except Exception as e:
+        return create_api_response(500, None, f"사진 메타데이터 조회 중 오류: {str(e)}")
+
+
+def search_photos_by_location(latitude: float, longitude: float, radius_km: float = 10.0, limit: int = 20) -> dict:
+    """
+    위치 기반 사진 검색 API 함수
+
+    Args:
+        latitude: 위도
+        longitude: 경도
+        radius_km: 검색 반경 (km)
+        limit: 조회할 개수
+
+    Returns:
+        dict: 검색된 사진 목록
+    """
+    try:
+        storage_type = os.getenv('STORAGE_TYPE', 'LOCAL')
+        service = UnifiedStorageService(storage_type)
+        result = service.search_photos_by_location(latitude, longitude, radius_km, limit)
+
+        if result['success']:
+            return create_api_response(200, result, f"위치 기반 검색 완료: {len(result['photos'])}개 발견")
+        else:
+            return create_api_response(500, None, f"위치 기반 검색 실패: {result.get('error')}")
+
+    except Exception as e:
+        return create_api_response(500, None, f"위치 기반 검색 중 오류: {str(e)}")
+
     return result
 
 if __name__ == "__main__":

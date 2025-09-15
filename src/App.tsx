@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { HomePage } from './pages/HomePage'
 import { UploadPage } from './pages/UploadPage'
 import { MapPage } from './pages/MapPage'
 import { ThemeProvider } from './contexts/ThemeContext'
-import { uploadMultiplePhotos } from './services/photoAPI'
+import { uploadMultiplePhotos, PhotoAPIClient } from './services/photoAPI'
 import type { UnifiedPhotoData } from './types'
 import './App.css'
 import './components/MultiPhotoUpload.css'
@@ -40,6 +40,62 @@ function App() {
   const [uploadedPhotos, setUploadedPhotos] = useState<UnifiedPhotoData[]>([])
   const [currentPage, setCurrentPage] = useState<'home' | 'upload' | 'map'>('home')
   const [isUploading, setIsUploading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+
+  // 앱 시작 시 서버에서 기존 사진 목록 불러오기
+  useEffect(() => {
+    const loadExistingPhotos = async () => {
+      try {
+        console.log('🔄 서버에서 기존 사진 목록 불러오는 중...')
+        const apiClient = new PhotoAPIClient()
+        const response = await apiClient.getPhotos(50, 0, 'upload_timestamp DESC')
+
+        if (response.success && response.data) {
+          console.log(`✅ ${response.data.photos.length}개 사진을 서버에서 불러왔습니다`)
+
+          // 서버 데이터를 UnifiedPhotoData 형식으로 변환
+          const serverPhotos: UnifiedPhotoData[] = response.data.photos.map(photo => ({
+            id: photo.id, // 이제 API가 photo.id를 반환함
+            filename: photo.filename,
+            file_url: photo.file_url,
+            thumbnail_urls: photo.thumbnail_urls,
+            file: null, // 서버에서 불러온 데이터는 File 객체가 없음
+            description: photo.description || '',
+            location: photo.location || undefined,
+            thumbnail: photo.thumbnail_urls?.medium ? {
+              dataUrl: photo.thumbnail_urls.medium,
+              width: 400,
+              height: 400,
+              size: 0
+            } : undefined,
+            standardThumbnails: photo.thumbnail_urls ? {
+              small: { dataUrl: photo.thumbnail_urls.small, width: 150, height: 150, size: 0 },
+              medium: { dataUrl: photo.thumbnail_urls.medium, width: 400, height: 400, size: 0 },
+              large: { dataUrl: photo.thumbnail_urls.large, width: 800, height: 600, size: 0 }
+            } : {},
+            exifData: photo.exif_data || null,
+            uploadedAt: new Date(photo.upload_timestamp || Date.now()),
+            serverData: {
+              fileUrl: photo.file_url,
+              thumbnailUrls: photo.thumbnail_urls || {},
+              uploadTimestamp: photo.upload_timestamp,
+              fileSize: photo.file_size
+            }
+          }))
+
+          setUploadedPhotos(serverPhotos)
+        } else {
+          console.log('⚠️ 서버에서 사진 목록을 불러오지 못했습니다:', response.message)
+        }
+      } catch (error) {
+        console.error('❌ 사진 목록 불러오기 실패:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadExistingPhotos()
+  }, [])
 
   const handleUpload = async (dataArray: PhotoUploadData[]) => {
     setIsUploading(true);
@@ -133,8 +189,19 @@ function App() {
   return (
     <ThemeProvider>
       <div className="app">
-        {currentPage === 'home' ? (
-          <HomePage 
+        {isLoading ? (
+          <div className="loading-container" style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '100vh',
+            flexDirection: 'column'
+          }}>
+            <div style={{ fontSize: '18px', marginBottom: '10px' }}>🔄 사진을 불러오는 중...</div>
+            <div style={{ fontSize: '14px', color: '#666' }}>서버에서 기존 사진 목록을 가져오고 있습니다</div>
+          </div>
+        ) : currentPage === 'home' ? (
+          <HomePage
             photos={uploadedPhotos}
             onUploadClick={handleUploadClick}
             onMapClick={handleMapClick}

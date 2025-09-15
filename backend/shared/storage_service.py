@@ -10,6 +10,7 @@ from typing import Dict, Any, Optional, List, Union
 from datetime import datetime
 from .config import Config
 from .utils import get_current_timestamp
+from .nosql_client import OCINoSQLClient
 
 
 class StorageInterface(ABC):
@@ -282,6 +283,14 @@ class UnifiedStorageService:
         self.storage = StorageServiceFactory.create_storage_service(storage_type)
         self.storage_type = type(self.storage).__name__
 
+        # NoSQL 클라이언트 초기화 (OCI 환경에서만)
+        self.nosql_client = None
+        try:
+            if storage_type and storage_type.upper() == 'OCI':
+                self.nosql_client = OCINoSQLClient()
+        except Exception as e:
+            print(f"NoSQL 클라이언트 초기화 실패: {e}")
+
     def upload_photo(
         self,
         file_content: bytes,
@@ -348,7 +357,8 @@ class UnifiedStorageService:
                     else:
                         print(f"썸네일 {size} 업로드 실패: {thumbnail_result['error']}")
 
-            return {
+            # 업로드 결과
+            upload_result = {
                 "success": True,
                 "photo_id": photo_id,
                 "filename": f"{photo_id}{file_extension}",
@@ -359,10 +369,180 @@ class UnifiedStorageService:
                 "upload_details": results
             }
 
+            # NoSQL에 메타데이터 저장 (OCI 환경에서만)
+            if self.nosql_client:
+                try:
+                    nosql_data = {
+                        "photo_id": photo_id,
+                        "filename": f"{photo_id}{file_extension}",
+                        "description": metadata.get("description", "") if metadata else "",
+                        "file_url": original_result["url"],
+                        "thumbnail_urls": thumbnail_urls,
+                        "file_size": len(file_content),
+                        "upload_timestamp": get_current_timestamp(),
+                        "location": metadata.get("location") if metadata else None,
+                        "exif_data": metadata.get("exif_data") if metadata else None,
+                        "tags": metadata.get("tags", []) if metadata else []
+                    }
+
+                    nosql_result = self.nosql_client.save_photo_metadata(nosql_data)
+                    upload_result["nosql_saved"] = nosql_result["success"]
+
+                    if not nosql_result["success"]:
+                        print(f"NoSQL 저장 실패: {nosql_result.get('error')}")
+
+                except Exception as e:
+                    print(f"NoSQL 저장 중 오류: {e}")
+                    upload_result["nosql_saved"] = False
+
+            return upload_result
+
         except Exception as e:
             return {
                 "success": False,
                 "error": f"사진 업로드 중 오류: {str(e)}"
+            }
+
+    def list_photos(
+        self,
+        limit: int = 20,
+        page: Optional[str] = None,
+        order_by: str = 'upload_timestamp',
+        order: str = 'DESC'
+    ) -> Dict[str, Any]:
+        """
+        사진 목록 조회 (Object Storage 기반으로 임시 구현)
+
+        Args:
+            limit: 조회할 개수
+            page: 페이지 토큰
+            order_by: 정렬 기준
+            order: 정렬 순서 (ASC/DESC)
+
+        Returns:
+            사진 목록과 페이지 정보
+        """
+        try:
+            # Object Storage에서 직접 파일 목록 가져오기
+            files = self.storage.list_files("photos/")
+
+            # 썸네일 파일 목록도 가져오기 (존재 여부 확인용)
+            thumbnail_files = self.storage.list_files("thumbnails/")
+            existing_thumbnails = set()
+            for thumb_file in thumbnail_files:
+                # thumbnails/small/photo_id_small.jpg -> photo_id 추출
+                parts = thumb_file.get('object_name', '').split('/')
+                if len(parts) >= 3:
+                    filename = parts[-1]  # photo_id_small.jpg
+                    photo_id = filename.split('_')[0]  # photo_id
+                    existing_thumbnails.add(photo_id)
+
+            # 파일 정보를 사진 목록 형태로 변환
+            photos = []
+            for file_info in files[:limit]:  # limit 적용
+                # 파일명에서 photo_id 추출
+                object_name = file_info.get('object_name', '')
+                if object_name.startswith('photos/'):
+                    filename = object_name.split('/')[-1]
+                    photo_id = filename.split('.')[0]
+
+                    # 썸네일 URL 구성 (실제 존재하는 경우만)
+                    base_url = file_info.get('url', '').replace(f'/o/photos/{filename}', '/o')
+                    thumbnail_urls = {}
+
+                    if photo_id in existing_thumbnails:
+                        thumbnail_urls = {
+                            "small": f"{base_url}/thumbnails/small/{photo_id}_small.jpg",
+                            "medium": f"{base_url}/thumbnails/medium/{photo_id}_medium.jpg"
+                        }
+
+                    photo_data = {
+                        "photo_id": photo_id,
+                        "filename": filename,
+                        "description": "",  # Object Storage에서는 설명이 없음
+                        "file_url": file_info.get('url', ''),
+                        "thumbnail_urls": thumbnail_urls,
+                        "file_size": file_info.get('size', 0),
+                        "upload_timestamp": file_info.get('last_modified', ''),
+                        "location": None,
+                        "exif_data": {},
+                        "tags": []
+                    }
+                    photos.append(photo_data)
+
+            return {
+                "success": True,
+                "photos": photos,
+                "page_info": {
+                    "current_page": page,
+                    "next_page": None,
+                    "count": len(photos),
+                    "limit": limit
+                }
+            }
+
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"사진 목록 조회 중 오류: {str(e)}",
+                "photos": [],
+                "page_info": None
+            }
+
+    def get_photo_metadata(self, photo_id: str) -> Optional[Dict[str, Any]]:
+        """
+        특정 사진의 메타데이터 조회
+
+        Args:
+            photo_id: 사진 ID
+
+        Returns:
+            사진 메타데이터 또는 None
+        """
+        if not self.nosql_client:
+            return None
+
+        try:
+            return self.nosql_client.get_photo_metadata(photo_id)
+        except Exception as e:
+            print(f"사진 메타데이터 조회 오류: {e}")
+            return None
+
+    def search_photos_by_location(
+        self,
+        latitude: float,
+        longitude: float,
+        radius_km: float = 10.0,
+        limit: int = 20
+    ) -> Dict[str, Any]:
+        """
+        위치 기반 사진 검색
+
+        Args:
+            latitude: 위도
+            longitude: 경도
+            radius_km: 검색 반경 (km)
+            limit: 조회할 개수
+
+        Returns:
+            검색된 사진 목록
+        """
+        if not self.nosql_client:
+            return {
+                "success": False,
+                "error": "NoSQL 클라이언트가 초기화되지 않았습니다",
+                "photos": [],
+                "search_params": None
+            }
+
+        try:
+            return self.nosql_client.search_photos_by_location(latitude, longitude, radius_km, limit)
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"위치 기반 검색 중 오류: {str(e)}",
+                "photos": [],
+                "search_params": None
             }
 
     def delete_photo(self, photo_id: str, file_extension: str = None) -> bool:
@@ -391,9 +571,6 @@ class UnifiedStorageService:
             print(f"사진 삭제 중 오류: {str(e)}")
             return False
 
-    def list_photos(self) -> List[Dict[str, Any]]:
-        """사진 목록 조회"""
-        return self.storage.list_files("photos/")
 
     def get_storage_info(self) -> Dict[str, Any]:
         """현재 스토리지 정보"""
