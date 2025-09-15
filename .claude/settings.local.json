@@ -34,7 +34,10 @@
       "Bash(git rm:*)",
       "Bash(python test:*)",
       "Bash(python:*)",
-      "Bash(kill:*)"
+      "Bash(kill:*)",
+      "WebSearch",
+      "WebFetch(domain:oracle-cloud-infrastructure-python-sdk.readthedocs.io)",
+      "WebFetch(domain:github.com)"
     ],
     "deny": [],
     "ask": []
