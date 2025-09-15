@@ -4,7 +4,10 @@
  */
 
 // API 설정
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'http://localhost:8001';
+
+// 통합 스토리지 서비스 사용 여부 (환경변수로 제어)
+const USE_UNIFIED_STORAGE = true;
 
 // 타입 정의
 export interface APIPhotoUploadRequest {
@@ -241,6 +244,94 @@ export class PhotoAPIClient {
   }
 
   /**
+   * 다중 사진 업로드 (통합 스토리지 서비스 사용)
+   */
+  async uploadMultiplePhotosUnified(
+    files: Array<{
+      file: File;
+      description?: string;
+      thumbnails?: { [key: string]: { dataUrl: string } };
+      exifData?: any;
+      location?: { latitude: number; longitude: number };
+    }>,
+    onProgress?: (completed: number, total: number, currentFile?: string) => void
+  ): Promise<APIPhotoUploadResponse[]> {
+    try {
+      // 모든 파일을 한 번에 처리할 데이터로 변환
+      const filesData = await Promise.all(
+        files.map(async ({ file, description, thumbnails, exifData, location }) => {
+          const fileBase64 = await this.fileToBase64(file);
+
+          return {
+            file: fileBase64,
+            description: description || '',
+            thumbnails: thumbnails || {},
+            exifData: exifData || {},
+            location: location
+          };
+        })
+      );
+
+      // 통합 엔드포인트로 전송
+      const requestData = {
+        method: 'POST',
+        files: filesData
+      };
+
+      const response = await this.makeRequest<{
+        success: boolean;
+        message: string;
+        data?: {
+          files: Array<{
+            success: boolean;
+            data?: any;
+            error?: string;
+          }>;
+          summary: {
+            total: number;
+            success: number;
+            failed: number;
+            storage_type: string;
+          };
+        };
+      }>('/api/photos/upload-unified', {
+        method: 'POST',
+        body: JSON.stringify(requestData)
+      });
+
+      if (response.success && response.data) {
+        // 프로그레스 업데이트
+        if (onProgress) {
+          onProgress(response.data.summary.success, response.data.summary.total);
+        }
+
+        // 결과 변환
+        return response.data.files.map(fileResult => {
+          if (fileResult.success && fileResult.data) {
+            return {
+              success: true,
+              message: '업로드 성공',
+              data: fileResult.data
+            };
+          } else {
+            return {
+              success: false,
+              message: fileResult.error || '업로드 실패',
+              data: undefined
+            };
+          }
+        });
+      } else {
+        throw new Error(response.message || '업로드 실패');
+      }
+
+    } catch (error) {
+      console.error('통합 업로드 오류:', error);
+      throw error;
+    }
+  }
+
+  /**
    * 다중 사진 업로드 (순차적) - 처리된 데이터와 함께
    */
   async uploadMultiplePhotos(
@@ -253,6 +344,13 @@ export class PhotoAPIClient {
     }>,
     onProgress?: (completed: number, total: number, currentFile?: string) => void
   ): Promise<APIPhotoUploadResponse[]> {
+    // 통합 스토리지 서비스 사용 여부에 따라 분기
+    if (USE_UNIFIED_STORAGE) {
+      console.log('🚀 통합 스토리지 서비스 사용');
+      return this.uploadMultiplePhotosUnified(files, onProgress);
+    }
+
+    console.log('📤 기존 개별 업로드 방식 사용');
     const results: APIPhotoUploadResponse[] = [];
     const total = files.length;
 

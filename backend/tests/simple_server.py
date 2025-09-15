@@ -8,6 +8,7 @@ import json
 import os
 from urllib.parse import urlparse, parse_qs
 from test_func_local import local_photo_upload_handler
+from test_func_unified import handler_unified
 
 class PhotoAPIHandler(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
@@ -91,6 +92,44 @@ class PhotoAPIHandler(BaseHTTPRequestHandler):
             except Exception as e:
                 error_response = {
                     "success": False,
+                    "message": f"Upload error: {str(e)}"
+                }
+                self.send_response(500)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps(error_response).encode('utf-8'))
+
+        elif parsed_path.path == '/api/photos/upload-unified':
+            # 통합 스토리지 서비스 엔드포인트
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length)
+
+            try:
+                request_data = json.loads(post_data.decode('utf-8'))
+                result = handler_unified(request_data)
+
+                # 간단한 응답 형식으로 변환
+                status_code = result.get('status', 500)
+                response_data = {
+                    'success': status_code < 400,
+                    'message': result.get('message', ''),
+                    'data': result.get('data', None),
+                    'status': status_code
+                }
+
+                self.send_response(status_code)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.send_header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+                self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+                self.end_headers()
+
+                self.wfile.write(json.dumps(response_data, ensure_ascii=False).encode('utf-8'))
+
+            except Exception as e:
+                error_response = {
+                    "success": False,
                     "message": f"Server error: {str(e)}"
                 }
                 self.send_json_response(500, error_response)
@@ -130,4 +169,4 @@ def run_server(port=8000):
         httpd.server_close()
 
 if __name__ == "__main__":
-    run_server(8000)
+    run_server(8001)
