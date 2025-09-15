@@ -38,3 +38,36 @@ export interface Photo {
   createdAt: string;
   updatedAt: string;
 }
+
+// 통합된 사진 데이터 타입 (로컬 + 서버 지원)
+export interface UnifiedPhotoData {
+  // 서버 데이터 필드
+  id?: string;
+  filename?: string;
+  file_url?: string;
+  thumbnail_urls?: {
+    small?: string;
+    medium?: string;
+    large?: string;
+  };
+  file_size?: number;
+
+  // 로컬 데이터 필드
+  file?: File;
+  thumbnail?: {
+    dataUrl: string;
+    width: number;
+    height: number;
+    size: number;
+  };
+  standardThumbnails?: { [key: string]: { dataUrl: string; width: number; height: number; size: number } };
+
+  // 공통 필드
+  description: string;
+  location?: {
+    latitude: number;
+    longitude: number;
+  };
+  exifData?: ExifData | null;
+  uploadedAt: Date;
+}

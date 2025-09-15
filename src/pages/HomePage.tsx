@@ -2,40 +2,17 @@ import React, { useState } from 'react';
 import { PhotoModal } from '../components/PhotoModal';
 import { StatsChart } from '../components/StatsChart';
 import { LocationDisplay } from '../components/LocationDisplay';
+import { PageHeader } from '../components/PageHeader';
+import type { UnifiedPhotoData } from '../types';
 import './HomePage.css';
 
-interface StoredPhotoData {
-  file: File;
-  thumbnail?: {
-    dataUrl: string;
-    width: number;
-    height: number;
-    size: number;
-  };
-  description: string;
-  location?: {
-    latitude: number;
-    longitude: number;
-  };
-  exifData?: {
-    latitude?: number;
-    longitude?: number;
-    timestamp?: string;
-    camera?: string;
-    lens?: string;
-    [key: string]: string | number | boolean | undefined;
-  } | null;
-  uploadedAt: Date;
-}
-
 interface HomePageProps {
-  photos: StoredPhotoData[];
+  photos: UnifiedPhotoData[];
   onUploadClick: () => void;
   onMapClick: () => void;
-  onTestClick?: () => void;
 }
 
-export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMapClick, onTestClick }) => {
+export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMapClick }) => {
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
 
@@ -64,7 +41,7 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
   };
 
   // 실제 촬영시간 또는 업로드 시간을 가져오는 함수
-  const getPhotoTime = (photo: StoredPhotoData): Date => {
+  const getPhotoTime = (photo: UnifiedPhotoData): Date => {
     // EXIF 촬영시간이 있으면 우선 사용
     if (photo.exifData?.timestamp) {
       try {
@@ -108,7 +85,7 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
     );
 
     // 총 파일 크기
-    const totalSize = photos.reduce((sum, photo) => sum + photo.file.size, 0);
+    const totalSize = photos.reduce((sum, photo) => sum + (photo.file?.size || photo.file_size || 0), 0);
 
     // 이번 달 업로드 수
     const thisMonth = new Date();
@@ -141,35 +118,34 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
 
   const stats = getPhotoStats();
 
+  const headerButtons = [
+    {
+      icon: '🏠',
+      text: '홈',
+      onClick: () => {},
+      variant: 'secondary' as const,
+      active: true
+    },
+    {
+      icon: '📤',
+      text: '업로드',
+      onClick: onUploadClick,
+      variant: 'primary' as const
+    },
+    {
+      icon: '📍',
+      text: '지도',
+      onClick: onMapClick,
+      variant: 'success' as const
+    }
+  ];
+
   return (
     <div className="homepage">
-      <header className="homepage-header">
-        <h1>📸 포토로그</h1>
-        <p>나의 여행 기록</p>
-        <div className="header-buttons flex flex-wrap gap-3 justify-center">
-          <button 
-            onClick={onMapClick}
-            className="btn btn-success btn-lg"
-          >
-            📍 지도 보기
-          </button>
-          {onTestClick && (
-            <button 
-              onClick={onTestClick}
-              className="btn btn-secondary btn-lg"
-              style={{ backgroundColor: '#10b981', borderColor: '#10b981', color: 'white' }}
-            >
-              🧪 테스트
-            </button>
-          )}
-          <button 
-            onClick={onUploadClick}
-            className="btn btn-primary btn-lg"
-          >
-            ➕ 사진 업로드
-          </button>
-        </div>
-      </header>
+      <PageHeader 
+        currentPage="home"
+        buttons={headerButtons}
+      />
 
       <main className="homepage-main">
         {/* 통계 섹션 */}
@@ -313,9 +289,14 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
                   onClick={() => handlePhotoClick(index)}
                 >
                   <div className="photo-image">
-                    <img 
-                      src={photo.thumbnail?.dataUrl || URL.createObjectURL(photo.file)}
-                      alt={photo.description || '여행 사진'} 
+                    <img
+                      src={
+                        photo.thumbnail?.dataUrl ||
+                        photo.thumbnail_urls?.small ||
+                        photo.file_url ||
+                        (photo.file ? URL.createObjectURL(photo.file) : '')
+                      }
+                      alt={photo.description || '여행 사진'}
                       loading="lazy"
                     />
                     <div className="photo-overlay">

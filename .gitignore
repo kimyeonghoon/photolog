@@ -43,3 +43,45 @@ public/sample-images/
 
 # Browser console logs
 웹브라우저_콘솔로그.txt
+
+# Backend development
+backend/test_env/
+backend/**/__pycache__/
+backend/**/*.pyc
+backend/**/*.pyo
+backend/**/*.pyd
+backend/.Python
+backend/env/
+backend/venv/
+backend/ENV/
+backend/env.bak/
+backend/venv.bak/
+
+# Local development files
+backend/local_server.py
+backend/simple_server.py
+test_integration.html
+test_thumbnail_visual.html
+
+# Python cache
+*.pyc
+__pycache__/
+.pytest_cache/
+
+# Development logs
+backend/**/*.log
+
+# IDE files
+.claude/settings.local.json
+
+# Local storage for testing
+/tmp/photolog-storage/
+
+# Test images
+backend/tests/*.jpg
+backend/tests/*.png
+backend/tests/*.jpeg
+
+# Temporary files
+*.tmp
+*.temp

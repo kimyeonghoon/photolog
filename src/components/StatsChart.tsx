@@ -1,32 +1,9 @@
 import React from 'react';
+import type { UnifiedPhotoData } from '../types';
 import './StatsChart.css';
 
-interface PhotoData {
-  file: File;
-  thumbnail?: {
-    dataUrl: string;
-    width: number;
-    height: number;
-    size: number;
-  };
-  description: string;
-  location?: {
-    latitude: number;
-    longitude: number;
-  };
-  exifData?: {
-    latitude?: number;
-    longitude?: number;
-    timestamp?: string;
-    camera?: string;
-    lens?: string;
-    [key: string]: string | number | boolean | undefined;
-  } | null;
-  uploadedAt: Date;
-}
-
 interface StatsChartProps {
-  photos: PhotoData[];
+  photos: UnifiedPhotoData[];
 }
 
 interface LocationStats {
@@ -44,7 +21,7 @@ interface YearlyStats {
 
 export const StatsChart: React.FC<StatsChartProps> = ({ photos }) => {
   // 실제 촬영시간 또는 업로드 시간을 가져오는 함수
-  const getPhotoTime = (photo: PhotoData): Date => {
+  const getPhotoTime = (photo: UnifiedPhotoData): Date => {
     // EXIF 촬영시간이 있으면 우선 사용
     if (photo.exifData?.timestamp) {
       try {

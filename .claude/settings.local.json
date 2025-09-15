@@ -27,7 +27,14 @@
       "Bash(lsof:*)",
       "Bash(xargs kill:*)",
       "Bash(exiftool:*)",
-      "mcp__ide__getDiagnostics"
+      "mcp__ide__getDiagnostics",
+      "Bash(chmod:*)",
+      "Bash(tree:*)",
+      "Bash(curl:*)",
+      "Bash(git rm:*)",
+      "Bash(python test:*)",
+      "Bash(python:*)",
+      "Bash(kill:*)"
     ],
     "deny": [],
     "ask": []

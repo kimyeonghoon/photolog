@@ -2,35 +2,12 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { getCachedLocation } from '../utils/geocoding';
+import type { UnifiedPhotoData } from '../types';
 import './MapView.css';
-
-interface PhotoData {
-  file: File;
-  description: string;
-  location?: {
-    latitude: number;
-    longitude: number;
-  };
-  thumbnail?: {
-    dataUrl: string;
-    width: number;
-    height: number;
-    size: number;
-  };
-  uploadedAt: Date;
-  exifData?: {
-    latitude?: number;
-    longitude?: number;
-    timestamp?: string;
-    camera?: string;
-    lens?: string;
-    [key: string]: string | number | boolean | undefined;
-  } | null;
-}
 
 interface MapViewProps {
   className?: string;
-  photos?: PhotoData[];
+  photos?: UnifiedPhotoData[];
 }
 
 export const MapView: React.FC<MapViewProps> = ({ className, photos = [] }) => {
@@ -63,7 +40,7 @@ export const MapView: React.FC<MapViewProps> = ({ className, photos = [] }) => {
   }, []);
 
   // 사진의 실제 촬영 시간 또는 fallback 시간 반환
-  const getPhotoDateTime = (photo: PhotoData): Date => {
+  const getPhotoDateTime = (photo: UnifiedPhotoData): Date => {
     // 1. EXIF 촬영 시간 우선
     if (photo.exifData?.timestamp) {
       try {
@@ -75,7 +52,7 @@ export const MapView: React.FC<MapViewProps> = ({ className, photos = [] }) => {
     }
     
     // 2. 파일 수정 시간 차선
-    if (photo.file.lastModified) {
+    if (photo.file?.lastModified) {
       return new Date(photo.file.lastModified);
     }
     
@@ -84,8 +61,8 @@ export const MapView: React.FC<MapViewProps> = ({ className, photos = [] }) => {
   };
 
   // 날짜별 사진 그룹핑 함수 (촬영 시간 기준)
-  const groupPhotosByDate = useCallback((photos: PhotoData[]) => {
-    const groups: { [date: string]: PhotoData[] } = {};
+  const groupPhotosByDate = useCallback((photos: UnifiedPhotoData[]) => {
+    const groups: { [date: string]: UnifiedPhotoData[] } = {};
     
     photos.forEach(photo => {
       if (!photo.location) return; // 위치 정보가 없으면 제외
@@ -149,8 +126,8 @@ export const MapView: React.FC<MapViewProps> = ({ className, photos = [] }) => {
         html: `
           <div class="photo-marker-content" data-photo-index="${index}">
             <div class="photo-marker-thumbnail">
-              ${photo.thumbnail 
-                ? `<img src="${photo.thumbnail.dataUrl}" alt="${photo.description}" />` 
+              ${photo.thumbnail?.dataUrl || photo.thumbnail_urls?.small || photo.file_url
+                ? `<img src="${photo.thumbnail?.dataUrl || photo.thumbnail_urls?.small || photo.file_url}" alt="${photo.description}" />`
                 : `<div class="photo-marker-fallback">📸</div>`
               }
             </div>
@@ -229,8 +206,8 @@ export const MapView: React.FC<MapViewProps> = ({ className, photos = [] }) => {
         const popupContent = `
           <div class="photo-popup">
             <div class="photo-popup-image">
-              ${photo.thumbnail 
-                ? `<img src="${photo.thumbnail.dataUrl}" alt="${displayDescription}" />` 
+              ${photo.thumbnail?.dataUrl || photo.thumbnail_urls?.medium || photo.file_url
+                ? `<img src="${photo.thumbnail?.dataUrl || photo.thumbnail_urls?.medium || photo.file_url}" alt="${displayDescription}" />`
                 : `<div class="photo-placeholder">📸</div>`
               }
             </div>

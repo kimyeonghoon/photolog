@@ -1,0 +1,16 @@
+schema_version: 20180708
+name: thumbnail-generator
+version: 0.0.1
+runtime: python
+build_image: fnproject/python:3.9-dev
+run_image: fnproject/python:3.9
+entrypoint: /python/bin/fdk /function/func.py handler
+memory: 512
+timeout: 300
+config:
+  # OCI 환경 변수 설정
+  OCI_NAMESPACE: ${OCI_NAMESPACE}
+  OCI_BUCKET_NAME: ${OCI_BUCKET_NAME}
+  OCI_REGION: ${OCI_REGION}
+  NOSQL_COMPARTMENT_ID: ${NOSQL_COMPARTMENT_ID}
+  NOSQL_TABLE_NAME: ${NOSQL_TABLE_NAME}

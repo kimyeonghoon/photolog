@@ -232,11 +232,11 @@ export const createMultipleThumbnails = async (
 ): Promise<{ [key: string]: ThumbnailResult }> => {
   const results: { [key: string]: ThumbnailResult } = {};
   const maxConcurrent = 3; // 동시 처리 제한
-  
+
   // 청크 단위로 처리
   for (let i = 0; i < sizes.length; i += maxConcurrent) {
     const chunk = sizes.slice(i, i + maxConcurrent);
-    
+
     try {
       const chunkResults = await Promise.allSettled(
         chunk.map(async ({ name, options }) => {
@@ -274,6 +274,28 @@ export const createMultipleThumbnails = async (
   }
 
   return results;
+};
+
+/**
+ * 서버에서 요구하는 표준 썸네일 생성 (small, medium, large)
+ */
+export const createStandardThumbnails = async (file: File): Promise<{ [key: string]: ThumbnailResult }> => {
+  const standardSizes = [
+    {
+      name: 'small',
+      options: { width: 150, height: 150, mode: 'crop' as const, quality: 0.8 }
+    },
+    {
+      name: 'medium',
+      options: { width: 400, height: 400, mode: 'crop' as const, quality: 0.85 }
+    },
+    {
+      name: 'large',
+      options: { width: 800, height: 800, mode: 'fit' as const, quality: 0.9 }
+    }
+  ];
+
+  return createMultipleThumbnails(file, standardSizes);
 };
 
 /**

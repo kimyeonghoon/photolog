@@ -58,11 +58,13 @@ interface UploadPageProps {
   onError: (error: string) => void;
   onBackClick: () => void;
   onMapClick: () => void;
+  isUploading?: boolean; // API 업로드 상태
 }
 
-export const UploadPage: React.FC<UploadPageProps> = ({ 
-  onUpload, 
-  onError, 
+export const UploadPage: React.FC<UploadPageProps> = ({
+  onUpload,
+  onError,
+  isUploading = false, 
   onBackClick,
   onMapClick
 }) => {
@@ -81,22 +83,22 @@ export const UploadPage: React.FC<UploadPageProps> = ({
   const headerButtons = [
     {
       icon: '🏠',
-      text: '홈으로',
+      text: '홈',
       onClick: onBackClick,
       variant: 'secondary' as const
     },
     {
-      icon: '📍',
-      text: '지도 보기',
-      onClick: onMapClick,
-      variant: 'success' as const
-    },
-    {
       icon: '📤',
-      text: '사진 업로드',
+      text: '업로드',
       onClick: () => {},
       variant: 'primary' as const,
       active: true
+    },
+    {
+      icon: '📍',
+      text: '지도',
+      onClick: onMapClick,
+      variant: 'success' as const
     }
   ];
 
@@ -108,7 +110,16 @@ export const UploadPage: React.FC<UploadPageProps> = ({
       />
       <main className="upload-page-main">
         <div className="upload-container">
-          <MultiPhotoUpload 
+          {isUploading && (
+            <div className="upload-status-overlay">
+              <div className="upload-status-message">
+                <div className="loading-spinner"></div>
+                <p>서버로 업로드 중...</p>
+                <small>잠시만 기다려주세요</small>
+              </div>
+            </div>
+          )}
+          <MultiPhotoUpload
             onUpload={handleMultiUpload}
             onError={onError}
           />

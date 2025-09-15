@@ -1,34 +1,11 @@
 import React from 'react';
 import { MapView } from '../components/MapView';
 import { PageHeader } from '../components/PageHeader';
+import type { UnifiedPhotoData } from '../types';
 import './MapPage.css';
 
-interface StoredPhotoData {
-  file: File;
-  thumbnail?: {
-    dataUrl: string;
-    width: number;
-    height: number;
-    size: number;
-  };
-  description: string;
-  location?: {
-    latitude: number;
-    longitude: number;
-  };
-  exifData?: {
-    latitude?: number;
-    longitude?: number;
-    timestamp?: string;
-    camera?: string;
-    lens?: string;
-    [key: string]: string | number | boolean | undefined;
-  } | null;
-  uploadedAt: Date;
-}
-
 interface MapPageProps {
-  photos: StoredPhotoData[];
+  photos: UnifiedPhotoData[];
   onBackClick: () => void;
   onUploadClick: () => void;
 }
@@ -41,19 +18,19 @@ export const MapPage: React.FC<MapPageProps> = ({
   const headerButtons = [
     {
       icon: '🏠',
-      text: '홈으로',
+      text: '홈',
       onClick: onBackClick,
       variant: 'secondary' as const
     },
     {
       icon: '📤',
-      text: '사진 업로드',
+      text: '업로드',
       onClick: onUploadClick,
       variant: 'primary' as const
     },
     {
       icon: '📍',
-      text: '지도 보기',
+      text: '지도',
       onClick: () => {},
       variant: 'success' as const,
       active: true

@@ -1,33 +1,10 @@
 import React, { useEffect } from 'react';
 import { LocationDisplay } from './LocationDisplay';
+import type { UnifiedPhotoData } from '../types';
 import './PhotoModal.css';
 
-interface StoredPhotoData {
-  file: File;
-  thumbnail?: {
-    dataUrl: string;
-    width: number;
-    height: number;
-    size: number;
-  };
-  description: string;
-  location?: {
-    latitude: number;
-    longitude: number;
-  };
-  uploadedAt: Date;
-  exifData?: {
-    latitude?: number;
-    longitude?: number;
-    timestamp?: string;
-    camera?: string;
-    lens?: string;
-    [key: string]: string | number | boolean | undefined;
-  } | null;
-}
-
 interface PhotoModalProps {
-  photo: StoredPhotoData | null;
+  photo: UnifiedPhotoData | null;
   isOpen: boolean;
   onClose: () => void;
   onPrevious?: () => void;
@@ -138,8 +115,11 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
               </button>
             )}
             
-            <img 
-              src={URL.createObjectURL(photo.file)}
+            <img
+              src={
+                photo.file_url ||
+                (photo.file ? URL.createObjectURL(photo.file) : '')
+              }
               alt={photo.description || '사진'}
               className="photo-modal-image"
             />
@@ -179,7 +159,7 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
               
               <div className="info-item">
                 <span className="info-label">📁 파일 크기:</span>
-                <span className="info-value">{formatFileSize(photo.file.size)}</span>
+                <span className="info-value">{formatFileSize(photo.file?.size || photo.file_size || 0)}</span>
               </div>
               
               {photo.location && (

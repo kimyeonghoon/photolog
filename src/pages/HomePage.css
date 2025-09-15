@@ -4,46 +4,6 @@
   color: var(--text-primary);
 }
 
-/* Header */
-.homepage-header {
-  text-align: center;
-  padding: 40px 20px;
-  background: var(--bg-secondary);
-  border-bottom: 1px solid var(--border-primary);
-}
-
-.homepage-header h1 {
-  font-size: 2.5rem;
-  margin-bottom: 8px;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.homepage-header p {
-  font-size: 1.1rem;
-  margin-bottom: 20px;
-  color: var(--text-secondary);
-}
-
-.upload-button-header {
-  background: var(--accent-blue);
-  border: 2px solid var(--accent-blue);
-  color: white;
-  padding: 12px 24px;
-  border-radius: 25px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.upload-button-header:hover {
-  background: var(--accent-blue);
-  filter: brightness(1.1);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-card);
-}
-
 /* Main Content */
 .homepage-main {
   padding: 40px 20px;

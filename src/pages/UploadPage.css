@@ -1,40 +1,8 @@
-/* 업로드 페이지 특별 스타일 - 그라디언트 배경 유지 */
+/* 업로드 페이지 - 다른 페이지와 일관된 디자인 */
 .upload-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-}
-
-.upload-page .page-header {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border-bottom-color: rgba(255, 255, 255, 0.2);
-  color: white;
-}
-
-.upload-page .page-header h1 {
-  color: white;
-}
-
-.upload-page .page-header p {
-  color: rgba(255, 255, 255, 0.9);
-}
-
-.upload-page .header-buttons .btn {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.3);
-  color: white;
-}
-
-.upload-page .header-buttons .btn:hover {
-  background: rgba(255, 255, 255, 0.3);
-  border-color: rgba(255, 255, 255, 0.4);
-}
-
-.upload-page .header-buttons .btn.active {
-  background: rgba(255, 255, 255, 0.9);
-  color: #667eea;
-  border-color: rgba(255, 255, 255, 0.9);
+  background: var(--bg-primary);
+  color: var(--text-primary);
 }
 
 /* Main Content */
@@ -43,17 +11,73 @@
   justify-content: center;
   align-items: flex-start;
   padding: 40px 20px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .upload-container {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--bg-secondary);
   border-radius: 20px;
   padding: 30px;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--border-primary);
   max-width: 600px;
   width: 100%;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-card);
+  position: relative; /* 오버레이를 위한 상대 위치 */
+}
+
+/* 업로드 상태 오버레이 */
+.upload-status-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.upload-status-message {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  padding: 30px;
+  text-align: center;
+  box-shadow: var(--shadow-card);
+  max-width: 300px;
+}
+
+.upload-status-message p {
+  margin: 15px 0 5px 0;
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.upload-status-message small {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin: 0;
+}
+
+/* 로딩 스피너 */
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border-primary);
+  border-top: 3px solid var(--accent-blue);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 15px auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 /* Override PhotoUpload styles for better integration */
@@ -65,90 +89,82 @@
 }
 
 .upload-container .upload-area {
-  border-color: rgba(255, 255, 255, 0.3);
-  background-color: rgba(255, 255, 255, 0.05);
+  border-color: var(--border-primary);
+  background-color: var(--bg-tertiary);
 }
 
 .upload-container .upload-area:hover {
-  border-color: rgba(255, 255, 255, 0.5);
-  background-color: rgba(255, 255, 255, 0.1);
+  border-color: var(--accent-blue);
+  background-color: var(--bg-primary);
 }
 
 .upload-container .upload-button {
-  background-color: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.3);
-  color: white;
+  background-color: var(--bg-tertiary);
+  border-color: var(--border-primary);
+  color: var(--text-primary);
 }
 
 .upload-container .upload-button:hover:not(:disabled) {
-  background-color: rgba(255, 255, 255, 0.3);
+  background-color: var(--bg-primary);
+  border-color: var(--accent-blue);
 }
 
 .upload-container .camera-button {
-  background-color: rgba(40, 167, 69, 0.7);
-  border-color: rgba(40, 167, 69, 0.8);
+  background-color: #10b981;
+  border-color: #10b981;
+  color: white;
 }
 
 .upload-container .camera-button:hover:not(:disabled) {
-  background-color: rgba(40, 167, 69, 0.9);
+  background-color: #059669;
+  border-color: #059669;
 }
 
 .upload-container .final-upload-button {
-  background-color: rgba(40, 167, 69, 0.8);
+  background-color: #10b981;
+  border-color: #10b981;
+  color: white;
 }
 
 .upload-container .final-upload-button:hover:not(:disabled) {
-  background-color: rgba(40, 167, 69, 1);
+  background-color: #059669;
+  border-color: #059669;
 }
 
 .upload-container .description-input {
-  background-color: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.3);
-  color: white;
+  background-color: var(--bg-tertiary);
+  border-color: var(--border-primary);
+  color: var(--text-primary);
 }
 
 .upload-container .description-input::placeholder {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-secondary);
 }
 
 .upload-container .description-input:focus {
-  border-color: rgba(255, 255, 255, 0.6);
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
 }
 
 .upload-container .description-area label {
-  color: white;
+  color: var(--text-primary);
 }
 
 .upload-container .exif-info {
-  background-color: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.3);
+  background-color: var(--bg-tertiary);
+  border-color: var(--border-primary);
 }
 
 .upload-container .exif-info h3 {
-  color: white;
+  color: var(--text-primary);
 }
 
 .upload-container .exif-info p {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-secondary);
 }
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
-  .upload-page-header {
-    padding: 20px 16px;
-  }
-  
-  .back-button {
-    left: 16px;
-    font-size: 12px;
-    padding: 6px 12px;
-  }
-  
-  .upload-page-header h1 {
-    font-size: 1.5rem;
-  }
-  
   .upload-page-main {
     padding: 20px 16px;
   }
