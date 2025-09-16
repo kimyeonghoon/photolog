@@ -150,6 +150,15 @@ export class PhotoAPIClient {
         throw new Error(data.message || `HTTP ${response.status}: ${response.statusText}`);
       }
 
+      // 백엔드 응답 형식을 프론트엔드 형식으로 변환
+      if (data.status !== undefined) {
+        const success = data.status >= 200 && data.status < 300;
+        return {
+          ...data,
+          success: success
+        };
+      }
+
       return data;
     } catch (error) {
       if (error instanceof Error) {

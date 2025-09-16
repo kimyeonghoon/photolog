@@ -61,11 +61,15 @@ class OCINoSQLClient:
             if 'tags' not in photo_data:
                 photo_data['tags'] = []
 
-            # NoSQL PUT 요청 생성 - 실제로는 put_row 메서드와 간단한 딕셔너리 사용
-            response = self.nosql_client.put_row(
-                compartment_id=self.compartment_id,
-                table_name=self.table_name,
-                put_row_details=photo_data
+            # NoSQL UPDATE 요청 생성 - update_row 메서드 사용
+            update_row_details = oci.nosql.models.UpdateRowDetails(
+                value=photo_data,
+                compartment_id=self.compartment_id
+            )
+
+            response = self.nosql_client.update_row(
+                table_name_or_id=self.table_name,
+                update_row_details=update_row_details
             )
 
             return {
@@ -91,11 +95,13 @@ class OCINoSQLClient:
             사진 메타데이터 또는 None
         """
         try:
-            # NoSQL GET 요청
+            # NoSQL GET 요청 - key를 올바른 형식으로 전달
+            key_value = [f"photo_id:{photo_id}"]
+
             response = self.nosql_client.get_row(
-                compartment_id=self.compartment_id,
-                table_name=self.table_name,
-                key={'photo_id': photo_id}
+                table_name_or_id=self.table_name,
+                key=key_value,
+                compartment_id=self.compartment_id
             )
 
             if response.data.value:
@@ -139,19 +145,12 @@ class OCINoSQLClient:
             사진 목록과 페이지 정보
         """
         try:
-            # NoSQL Query 작성
-            sql = f"""
-            SELECT photo_id, filename, description, file_url, thumbnail_urls,
-                   file_size, upload_timestamp, location, tags
-            FROM {self.table_name}
-            ORDER BY {order_by} {order}
-            LIMIT {limit}
-            """
+            # NoSQL Query 작성 - 간단한 형태
+            sql = f"SELECT * FROM {self.table_name}"
 
             query_details = oci.nosql.models.QueryDetails(
                 compartment_id=self.compartment_id,
-                statement=sql,
-                limit=limit
+                statement=sql
             )
 
             response = self.nosql_client.query(query_details)
@@ -208,20 +207,12 @@ class OCINoSQLClient:
             검색된 사진 목록
         """
         try:
-            # 간단한 위치 기반 필터링 (정확한 지리적 거리 계산은 추후 개선)
-            sql = f"""
-            SELECT photo_id, filename, description, file_url, thumbnail_urls,
-                   file_size, upload_timestamp, location, tags
-            FROM {self.table_name}
-            WHERE location IS NOT NULL
-            ORDER BY upload_timestamp DESC
-            LIMIT {limit}
-            """
+            # 간단한 쿼리 - 위치가 있는 사진들만 가져와서 클라이언트에서 필터링
+            sql = f"SELECT * FROM {self.table_name}"
 
             query_details = oci.nosql.models.QueryDetails(
                 compartment_id=self.compartment_id,
-                statement=sql,
-                limit=limit
+                statement=sql
             )
 
             response = self.nosql_client.query(query_details)
@@ -283,10 +274,13 @@ class OCINoSQLClient:
             삭제 결과
         """
         try:
+            # key를 올바른 형식으로 전달
+            key_value = [f"photo_id:{photo_id}"]
+
             response = self.nosql_client.delete_row(
-                compartment_id=self.compartment_id,
-                table_name=self.table_name,
-                key={'photo_id': photo_id}
+                table_name_or_id=self.table_name,
+                key=key_value,
+                compartment_id=self.compartment_id
             )
 
             return {

@@ -29,7 +29,7 @@ def validate_image_file(file_content: bytes, filename: str, max_size: int) -> Tu
         return False, f"File size {len(file_content)} exceeds maximum {max_size} bytes"
 
     ext = f".{get_file_extension(filename)}"
-    from .config import Config
+    from config import Config
     if ext not in Config.ALLOWED_EXTENSIONS:
         return False, f"File extension {ext} not allowed"
 

@@ -75,8 +75,10 @@ def handler_unified(request_data: dict = None) -> dict:
 
         print(f"📤 {len(files_data)}개 파일 업로드 요청 처리 중...")
 
-        # 통합 스토리지 서비스 초기화
-        storage_service = UnifiedStorageService()
+        # 통합 스토리지 서비스 초기화 (환경변수에서 storage_type 결정)
+        import os
+        storage_type = os.getenv('STORAGE_TYPE', 'LOCAL')
+        storage_service = UnifiedStorageService(storage_type)
         storage_info = storage_service.get_storage_info()
         print(f"🔧 사용중인 스토리지: {storage_info['storage_type']}")
 
@@ -148,13 +150,12 @@ def handler_unified(request_data: dict = None) -> dict:
                     'file_size': str(len(file_content))
                 }
 
+                # 완전한 EXIF 데이터 전달
                 if exif_data:
-                    metadata['exif_camera'] = exif_data.get('camera', '')
-                    metadata['exif_timestamp'] = exif_data.get('timestamp', '')
+                    metadata['exif_data'] = exif_data
 
                 if location:
-                    metadata['latitude'] = str(location.get('latitude', ''))
-                    metadata['longitude'] = str(location.get('longitude', ''))
+                    metadata['location'] = location
 
                 # 통합 스토리지 서비스로 업로드
                 print(f"🚀 스토리지 업로드 시작...")
@@ -408,6 +409,109 @@ def search_photos_by_location(latitude: float, longitude: float, radius_km: floa
         return create_api_response(500, None, f"위치 기반 검색 중 오류: {str(e)}")
 
     return result
+
+
+def get_photo_list(limit: int = 20, page: str = None, order_by: str = 'upload_timestamp', order: str = 'DESC') -> dict:
+    """
+    사진 목록 조회 API 함수 (NoSQL Database 사용)
+
+    Args:
+        limit: 조회할 사진 수
+        page: 페이지 토큰
+        order_by: 정렬 기준
+        order: 정렬 순서
+
+    Returns:
+        dict: 사진 목록과 페이지 정보
+    """
+    try:
+        storage_type = os.getenv('STORAGE_TYPE', 'OCI')
+        service = UnifiedStorageService(storage_type)
+
+        # NoSQL 클라이언트가 있는 경우 NoSQL에서 조회
+        if hasattr(service, 'nosql_client') and service.nosql_client:
+            print(f"📋 NoSQL에서 사진 목록 조회 중... (limit: {limit})")
+            result = service.nosql_client.list_photos(limit=limit, page=page, order_by=order_by, order=order)
+
+            if result['success']:
+                photos = result['photos']
+                print(f"✅ NoSQL에서 {len(photos)}개 사진 조회 성공")
+
+                # API 응답 형식으로 변환
+                formatted_photos = []
+                for photo in photos:
+                    formatted_photo = {
+                        "id": photo.get('photo_id', ''),
+                        "filename": photo.get('filename', ''),
+                        "description": photo.get('description', ''),
+                        "file_url": photo.get('file_url', ''),
+                        "thumbnail_urls": photo.get('thumbnail_urls', {}),
+                        "file_size": photo.get('file_size', 0),
+                        "content_type": "image/jpeg",
+                        "upload_timestamp": photo.get('upload_timestamp', ''),
+                        "location": photo.get('location'),
+                        "exif_data": photo.get('exif_data', {})
+                    }
+                    formatted_photos.append(formatted_photo)
+
+                response_data = {
+                    "photos": formatted_photos,
+                    "count": len(formatted_photos),
+                    "total": len(formatted_photos),
+                    "has_more": result.get('page_info', {}).get('next_page') is not None
+                }
+
+                return create_api_response(200, response_data, "사진 목록 조회 성공")
+            else:
+                print(f"❌ NoSQL 조회 실패: {result.get('error')}")
+                # NoSQL 실패 시 Object Storage에서 조회
+                return get_photo_list_from_storage(service, limit)
+
+        else:
+            print("📦 NoSQL 클라이언트가 없어서 Object Storage에서 조회")
+            # NoSQL이 없는 경우 Object Storage에서 직접 조회
+            return get_photo_list_from_storage(service, limit)
+
+    except Exception as e:
+        print(f"❌ 사진 목록 조회 중 오류: {e}")
+        return create_api_response(500, None, f"사진 목록 조회 중 오류: {str(e)}")
+
+
+def get_photo_list_from_storage(service, limit: int) -> dict:
+    """Object Storage에서 직접 사진 목록 조회 (fallback)"""
+    try:
+        print(f"📦 Object Storage에서 사진 목록 조회 중...")
+        files = service.list_photos_from_storage(limit)
+
+        formatted_photos = []
+        for file_info in files[:limit]:
+            photo = {
+                "id": file_info.get('name', '').replace('.jpg', '').replace('photos/', ''),
+                "filename": file_info.get('name', ''),
+                "description": "",  # Object Storage에는 설명이 없음
+                "file_url": file_info.get('url', ''),
+                "thumbnail_urls": {},  # 썸네일은 별도 조회 필요
+                "file_size": file_info.get('size', 0),
+                "content_type": "image/jpeg",
+                "upload_timestamp": file_info.get('last_modified', ''),
+                "location": None,
+                "exif_data": {}
+            }
+            formatted_photos.append(photo)
+
+        response_data = {
+            "photos": formatted_photos,
+            "count": len(formatted_photos),
+            "total": len(formatted_photos),
+            "has_more": len(files) > limit
+        }
+
+        return create_api_response(200, response_data, "사진 목록 조회 성공 (Object Storage)")
+
+    except Exception as e:
+        print(f"❌ Object Storage 조회 실패: {e}")
+        return create_api_response(500, None, f"Object Storage 조회 실패: {str(e)}")
+
 
 if __name__ == "__main__":
     main_test()

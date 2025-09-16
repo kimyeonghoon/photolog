@@ -104,49 +104,52 @@ class OCINoSQLClient:
     def __init__(self):
         """NoSQL 클라이언트 초기화"""
         try:
-            self.config = oci.config.from_file()
-        except:
-            signer = oci.auth.signers.get_resource_principals_signer()
-            self.config = {}
-            self.signer = signer
+            # 로컬 환경: config 파일 사용
+            config = oci.config.from_file()
+            self.nosql_client = oci.nosql.NosqlClient(config=config)
+        except Exception as e:
+            # OCI Functions 환경: 리소스 주체(signer) 사용
+            try:
+                signer = oci.auth.signers.get_resource_principals_signer()
+                self.nosql_client = oci.nosql.NosqlClient(config={}, signer=signer)
+            except Exception as signer_error:
+                raise Exception(f"OCI 인증 실패: config 파일 오류({e}), signer 오류({signer_error})")
 
-        self.nosql_client = oci.nosql.NosqlClient(
-            self.config,
-            signer=getattr(self, 'signer', None)
-        )
         self.compartment_id = Config.NOSQL_COMPARTMENT_ID
         self.table_name = Config.NOSQL_TABLE_NAME
 
     def insert_photo_metadata(self, photo_data: Dict[str, Any]) -> Dict[str, Any]:
-        """사진 메타데이터 삽입"""
+        """사진 메타데이터 삽입 (update_row 사용)"""
         try:
             # NoSQL 테이블에 삽입할 데이터 준비
             row_data = {
-                "id": photo_data["id"],
+                "photo_id": photo_data["id"],
                 "filename": photo_data["filename"],
                 "description": photo_data.get("description", ""),
                 "file_url": photo_data["file_url"],
-                "thumbnail_url": photo_data.get("thumbnail_url", ""),
+                "thumbnail_urls": photo_data.get("thumbnail_urls", {}),
                 "file_size": photo_data["file_size"],
                 "content_type": photo_data["content_type"],
                 "upload_timestamp": photo_data["upload_timestamp"],
-                "exif_data": json.dumps(photo_data.get("exif_data", {})),
+                "exif_data": photo_data.get("exif_data", {}),
                 "location": photo_data.get("location", {}),
                 "tags": photo_data.get("tags", [])
             }
 
-            # NoSQL 쿼리 실행
-            query_request = oci.nosql.models.QueryRequest(
-                compartment_id=self.compartment_id,
-                statement=f"INSERT INTO {self.table_name} VALUE {json.dumps(row_data)}"
+            update_row_details = oci.nosql.models.UpdateRowDetails(
+                value=row_data,
+                compartment_id=self.compartment_id
             )
 
-            response = self.nosql_client.query(query_request)
+            response = self.nosql_client.update_row(
+                table_name_or_id=self.table_name,
+                update_row_details=update_row_details
+            )
 
             return {
                 "success": True,
                 "photo_id": photo_data["id"],
-                "query_result": response.data
+                "version": response.data.version
             }
 
         except Exception as e:
@@ -161,26 +164,27 @@ class OCINoSQLClient:
         offset: int = 0,
         order_by: str = "upload_timestamp DESC"
     ) -> Dict[str, Any]:
-        """사진 목록 조회"""
+        """사진 목록 조회 (참고: 현재 DB 설정에서는 실패할 수 있음)"""
         try:
+            # 참고: 이 쿼리는 "complex query"를 지원하지 않는 DB 설정에서는 실패합니다.
             query = f"""
                 SELECT * FROM {self.table_name}
                 ORDER BY {order_by}
                 LIMIT {limit} OFFSET {offset}
             """
 
-            query_request = oci.nosql.models.QueryRequest(
+            query_details = oci.nosql.models.QueryDetails(
                 compartment_id=self.compartment_id,
                 statement=query
             )
 
-            response = self.nosql_client.query(query_request)
+            response = self.nosql_client.query(query_details)
 
             photos = []
             for row in response.data.items:
                 photo = dict(row.value)
                 # JSON 문자열을 다시 객체로 변환
-                if 'exif_data' in photo:
+                if 'exif_data' in photo and isinstance(photo['exif_data'], str):
                     photo['exif_data'] = json.loads(photo['exif_data'])
                 photos.append(photo)
 
@@ -197,20 +201,18 @@ class OCINoSQLClient:
             }
 
     def get_photo_by_id(self, photo_id: str) -> Dict[str, Any]:
-        """특정 사진 조회"""
+        """특정 사진 조회 (get_row 사용)"""
         try:
-            query = f"SELECT * FROM {self.table_name} WHERE id = '{photo_id}'"
-
-            query_request = oci.nosql.models.QueryRequest(
-                compartment_id=self.compartment_id,
-                statement=query
+            key = [f"photo_id:{photo_id}"]
+            response = self.nosql_client.get_row(
+                table_name_or_id=self.table_name,
+                key=key,
+                compartment_id=self.compartment_id
             )
 
-            response = self.nosql_client.query(query_request)
-
-            if response.data.items:
-                photo = dict(response.data.items[0].value)
-                if 'exif_data' in photo:
+            if response.data and response.data.value:
+                photo = dict(response.data.value)
+                if 'exif_data' in photo and isinstance(photo['exif_data'], str):
                     photo['exif_data'] = json.loads(photo['exif_data'])
 
                 return {

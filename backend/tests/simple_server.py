@@ -30,7 +30,7 @@ class PhotoAPIHandler(BaseHTTPRequestHandler):
                 "success": True,
                 "message": "Server is running",
                 "version": "1.0.0",
-                "endpoints": ["/api/health", "/api/photos/upload", "/api/photos", "/storage/*"]
+                "endpoints": ["/api/health", "/api/photos/upload", "/api/photos/upload-unified", "/api/photos", "/storage/*"]
             }
             self.send_json_response(200, response_data)
         elif parsed_path.path == '/api/photos':
@@ -95,74 +95,42 @@ class PhotoAPIHandler(BaseHTTPRequestHandler):
         """POST 요청 처리"""
         parsed_path = urlparse(self.path)
 
-        if parsed_path.path == '/api/photos/upload':
-            # 요청 본문 읽기
+        if parsed_path.path == '/api/photos/upload' or parsed_path.path == '/api/photos/upload-unified':
             content_length = int(self.headers['Content-Length'])
             post_data = self.rfile.read(content_length)
 
             try:
-                request_data = json.loads(post_data.decode('utf-8'))
+                print("🚀 통합 업로드 핸들러 호출...")
 
-                # 환경변수 STORAGE_TYPE에 따라 핸들러 선택
-                storage_type = os.getenv('STORAGE_TYPE', 'OCI')
+                # POST 데이터를 JSON으로 파싱
+                try:
+                    request_json = json.loads(post_data.decode('utf-8'))
+                    print(f"📦 요청 데이터 파싱 완료: {len(request_json.get('files', []))}개 파일")
+                except json.JSONDecodeError as e:
+                    print(f"❌ JSON 파싱 실패: {e}")
+                    self.send_json_response(400, {
+                        "success": False,
+                        "message": f"Invalid JSON data: {str(e)}"
+                    })
+                    return
 
-                if storage_type == 'OCI':
-                    # OCI 스토리지 사용 - 간단한 OCI 업로드 핸들러
-                    result = self.handle_oci_upload(request_data)
-                else:
-                    # 로컬 스토리지 사용
-                    result = local_photo_upload_handler(request_data)
+                # 통합 핸들러 사용
+                result = handler_unified(request_json)
+                print("✅ 통합 핸들러 실행 완료")
 
-                self.send_response(result['statusCode'])
-                for header, value in result['headers'].items():
-                    self.send_header(header, value)
-                self.end_headers()
-                self.wfile.write(result['body'].encode('utf-8'))
-
-            except Exception as e:
-                error_response = {
-                    "success": False,
-                    "message": f"Upload error: {str(e)}"
-                }
-                self.send_response(500)
-                self.send_header('Content-Type', 'application/json')
-                self.send_header('Access-Control-Allow-Origin', '*')
-                self.end_headers()
-                self.wfile.write(json.dumps(error_response).encode('utf-8'))
-
-        elif parsed_path.path == '/api/photos/upload-unified':
-            # 통합 스토리지 서비스 엔드포인트
-            content_length = int(self.headers['Content-Length'])
-            post_data = self.rfile.read(content_length)
-
-            try:
-                request_data = json.loads(post_data.decode('utf-8'))
-                result = handler_unified(request_data)
-
-                # 간단한 응답 형식으로 변환
-                status_code = result.get('status', 500)
-                response_data = {
-                    'success': status_code < 400,
-                    'message': result.get('message', ''),
-                    'data': result.get('data', None),
-                    'status': status_code
-                }
-
-                self.send_response(status_code)
-                self.send_header('Content-Type', 'application/json')
-                self.send_header('Access-Control-Allow-Origin', '*')
-                self.send_header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-                self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-                self.end_headers()
-
-                self.wfile.write(json.dumps(response_data, ensure_ascii=False).encode('utf-8'))
+                # JSON 응답 전송 (CORS 헤더 포함)
+                self.send_json_response(result.get('status', 200), result)
 
             except Exception as e:
+                import traceback
+                print(f"❌ 핸들러 호출 중 오류 발생: {e}")
+                traceback.print_exc()
                 error_response = {
                     "success": False,
-                    "message": f"Server error: {str(e)}"
+                    "message": f"Server error during handler execution: {str(e)}"
                 }
                 self.send_json_response(500, error_response)
+
         else:
             self.send_error(404, "Not Found")
 

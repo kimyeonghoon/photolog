@@ -512,3 +512,4 @@ if __name__ == "__main__":
     print(f"에러 메시지: {response_data['message']}")
 
     print("\n🎉 로컬 테스트 완료!")
+

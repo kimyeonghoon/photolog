@@ -92,3 +92,20 @@ backend/oci_setup_guide.md
 # Temporary files
 *.tmp
 *.temp
+
+# OCI config files copied to workspace
+.oci/
+
+# Test and debugging files
+backend/tests/cleanup_*.py
+backend/tests/debug_*.py
+backend/tests/test_nosql_setup.py
+backend/tests/query_nosql_data.py
+
+# Test images
+public/test_image.jpg
+public/test_*.jpg
+public/test_*.png
+
+# New photo upload function directory
+backend/functions/photo_upload/

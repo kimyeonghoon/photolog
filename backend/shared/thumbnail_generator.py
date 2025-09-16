@@ -5,7 +5,7 @@
 import io
 from PIL import Image, ImageOps
 from typing import Dict, List, Tuple, Optional
-from .config import Config
+from config import Config
 
 class ThumbnailGenerator:
     """썸네일 생성 클래스"""

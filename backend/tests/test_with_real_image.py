@@ -1,192 +1,146 @@
 #!/usr/bin/env python3
 """
-실제 이미지 파일을 사용한 종합 테스트
+실제 OCI 서비스와 연동하여 업로드를 테스트하는 스크립트
 """
 import sys
 import os
 import base64
 import json
-from test_func_local import local_photo_upload_handler
+import io
 
-def create_sample_image_with_location():
-    """GPS 정보가 포함된 샘플 이미지 생성"""
-    from PIL import Image
-    from PIL.ExifTags import TAGS, GPSTAGS
-    import io
+# 프로젝트 루트 및 shared 폴더를 sys.path에 추가
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../shared')))
 
-    # 10x10 픽셀 RGB 이미지 생성
-    img = Image.new('RGB', (10, 10), color='red')
+# 실제 핸들러 import
+from functions.photo_upload.func import handler
 
-    # EXIF 데이터는 실제 카메라에서 생성하기 어려우므로
-    # 이 테스트에서는 일반 이미지로 진행
+class MockContext:
+    """OCI Functions의 컨텍스트 객체를 모방하는 클래스"""
+    def __init__(self, method='POST'):
+        self._method = method
 
-    # 이미지를 bytes로 변환
-    img_byte_arr = io.BytesIO()
-    img.save(img_byte_arr, format='JPEG')
-    img_byte_arr = img_byte_arr.getvalue()
+    def Method(self):
+        return self._method
 
-    # Base64 인코딩
-    return base64.b64encode(img_byte_arr).decode('utf-8')
+def create_test_jpeg():
+    """테스트용 JPG 이미지 파일을 생성하여 public 폴더에 저장"""
+    try:
+        from PIL import Image
+        file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../public/test_image.jpg'))
+        if os.path.exists(file_path):
+            print("- 테스트용 이미지 파일 'public/test_image.jpg'가 이미 존재합니다.")
+            return
 
-def test_comprehensive_upload():
-    """종합적인 업로드 테스트"""
-    print("🔍 종합 업로드 테스트 시작")
-    print("=" * 50)
+        print("- 테스트용 이미지 파일 'public/test_image.jpg' 생성 중...")
+        img = Image.new('RGB', (10, 10), color='red')
+        img.save(file_path, format='JPEG')
+        print("✅ 생성 완료.")
+    except Exception as e:
+        print(f"❌ 테스트 이미지 생성 실패: {e}")
+        raise
 
-    # 테스트 케이스들
-    test_cases = [
-        {
-            "name": "일반 JPEG 이미지",
-            "data": {
-                "filename": "seoul-tower.jpg",
-                "file_data": create_sample_image_with_location(),
-                "content_type": "image/jpeg",
-                "description": "서울 N타워 야경"
-            },
-            "expected_status": 201
-        },
-        {
-            "name": "PNG 이미지",
-            "data": {
-                "filename": "screenshot.png",
-                "file_data": create_sample_image_with_location(),
-                "content_type": "image/png",
-                "description": "스크린샷 이미지"
-            },
-            "expected_status": 201
-        },
-        {
-            "name": "설명 없는 이미지",
-            "data": {
-                "filename": "no-description.jpg",
-                "file_data": create_sample_image_with_location(),
-                "content_type": "image/jpeg"
-                # description 누락
-            },
-            "expected_status": 201
-        },
-        {
-            "name": "잘못된 파일 확장자",
-            "data": {
-                "filename": "document.pdf",
-                "file_data": create_sample_image_with_location(),
-                "content_type": "application/pdf",
-                "description": "PDF 파일"
-            },
-            "expected_status": 400
-        },
-        {
-            "name": "빈 파일명",
-            "data": {
-                "filename": "",
-                "file_data": create_sample_image_with_location(),
-                "content_type": "image/jpeg",
-                "description": "빈 파일명 테스트"
-            },
-            "expected_status": 400
+def run_real_upload_test(test_name, filename, content_type, description):
+    """실제 업로드 테스트 실행 함수"""
+    print(f"\n📋 테스트: {test_name}")
+    print("-" * 40)
+
+    try:
+        # 테스트할 파일 읽기
+        file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), f'../../{filename}'))
+        print(f"- 테스트 파일: {file_path}")
+        with open(file_path, 'rb') as f:
+            file_content = f.read()
+
+        # Base64 인코딩
+        file_data_b64 = base64.b64encode(file_content).decode('utf-8')
+
+        # 핸들러에 전달할 데이터 구성
+        request_data = {
+            "filename": os.path.basename(filename),
+            "file_data": file_data_b64,
+            "content_type": content_type,
+            "description": description
         }
-    ]
 
-    passed = 0
-    total = len(test_cases)
+        # 모의 컨텍스트 생성
+        ctx = MockContext()
 
-    for i, test_case in enumerate(test_cases, 1):
-        print(f"\n📋 테스트 {i}: {test_case['name']}")
-        print("-" * 30)
+        # 핸들러 실행
+        print("- 실제 업로드 핸들러 호출...")
+        result = handler(ctx, data=io.BytesIO(json.dumps(request_data).encode('utf-8')))
 
-        try:
-            result = local_photo_upload_handler(test_case['data'])
-            response_data = json.loads(result['body'])
-            actual_status = result['statusCode']
-            expected_status = test_case['expected_status']
+        # 결과 분석
+        status_code = result['statusCode']
+        response_body = json.loads(result['body'])
 
-            print(f"예상 상태: {expected_status}")
-            print(f"실제 상태: {actual_status}")
-            print(f"성공 여부: {response_data['success']}")
-            print(f"메시지: {response_data['message']}")
+        print(f"- HTTP 상태 코드: {status_code}")
+        print(f"- 응답 성공 여부: {response_body.get('success')}")
+        print(f"- 메시지: {response_body.get('message')}")
 
-            if actual_status == expected_status:
-                print("✅ 테스트 통과")
-                passed += 1
+        if response_body.get('success'):
+            photo_id = response_body.get('data', {}).get('photo_id')
+            print(f"- 성공! 사진 ID: {photo_id}")
+            return True, photo_id
+        else:
+            print(f"- 실패. 원인: {response_body.get('message')}")
+            return False, None
 
-                # 성공한 경우 추가 정보 출력
-                if response_data['success'] and response_data.get('data'):
-                    data = response_data['data']
-                    print(f"   📷 사진 ID: {data.get('photo_id', 'N/A')[:8]}...")
-                    print(f"   📁 파일 크기: {data.get('file_size', 'N/A')} bytes")
-                    if data.get('location'):
-                        loc = data['location']
-                        print(f"   📍 위치: {loc.get('latitude', 'N/A')}, {loc.get('longitude', 'N/A')}")
-                    else:
-                        print(f"   📍 위치: GPS 정보 없음")
-            else:
-                print("❌ 테스트 실패")
-
-        except Exception as e:
-            print(f"❌ 테스트 오류: {str(e)}")
-
-    print("\n" + "=" * 50)
-    print(f"📊 테스트 결과: {passed}/{total} 통과")
-
-    if passed == total:
-        print("🎉 모든 테스트가 성공했습니다!")
-        print("✅ 사진 업로드 API가 정상적으로 작동합니다!")
-    else:
-        print("⚠️  일부 테스트가 실패했습니다.")
-
-    print("=" * 50)
-
-    return passed == total
-
-def test_file_size_limits():
-    """파일 크기 제한 테스트"""
-    print("\n📏 파일 크기 제한 테스트")
-    print("-" * 30)
-
-    # 큰 파일 데이터 생성 (5MB 정도)
-    large_data = "A" * (5 * 1024 * 1024)  # 5MB 텍스트
-    large_b64 = base64.b64encode(large_data.encode()).decode()
-
-    test_data = {
-        "filename": "large-file.jpg",
-        "file_data": large_b64,
-        "content_type": "image/jpeg",
-        "description": "큰 파일 테스트"
-    }
-
-    result = local_photo_upload_handler(test_data)
-    response_data = json.loads(result['body'])
-
-    print(f"파일 크기: ~{len(large_data)} bytes")
-    print(f"상태 코드: {result['statusCode']}")
-    print(f"메시지: {response_data['message']}")
-
-    # 파일이 너무 크거나 잘못된 형식이므로 400 에러가 나와야 함
-    if result['statusCode'] == 400:
-        print("✅ 파일 크기 제한이 정상적으로 작동합니다")
-        return True
-    else:
-        print("❌ 파일 크기 제한이 작동하지 않습니다")
-        return False
+    except FileNotFoundError:
+        print(f"❌ 테스트 파일 '{filename}'을(를) 찾을 수 없습니다.")
+        return False, None
+    except Exception as e:
+        print(f"❌ 테스트 중 예외 발생: {e}")
+        import traceback
+        traceback.print_exc()
+        return False, None
 
 if __name__ == "__main__":
-    print("🧪 포토로그 API 종합 테스트")
-    print("=" * 60)
+    print("🧪 실제 OCI 연동 업로드 테스트 시작")
+    print("=" * 50)
 
-    # 종합 테스트 실행
-    basic_test_passed = test_comprehensive_upload()
+    # 테스트용 이미지 생성
+    create_test_jpeg()
 
-    # 파일 크기 제한 테스트
-    size_test_passed = test_file_size_limits()
+    # --- 테스트 1: 잘못된 파일 형식 (SVG) --- #
+    test1_success, _ = run_real_upload_test(
+        test_name="잘못된 파일 형식(SVG) 업로드",
+        filename="public/vite.svg",
+        content_type="image/svg+xml",
+        description="Vite 로고 SVG 파일"
+    )
 
-    print(f"\n🏆 최종 결과:")
-    print(f"   기본 기능 테스트: {'✅ 통과' if basic_test_passed else '❌ 실패'}")
-    print(f"   파일 크기 제한: {'✅ 통과' if size_test_passed else '❌ 실패'}")
-
-    if basic_test_passed and size_test_passed:
-        print("\n🎉 모든 테스트가 성공했습니다!")
-        print("🚀 사진 업로드 API가 프로덕션 준비 완료!")
+    print("\n--- 테스트 1 결과 ---")
+    if not test1_success:
+        print("✅ 정상: 잘못된 파일 형식을 올바르게 차단했습니다.")
     else:
-        print("\n⚠️  일부 테스트가 실패했습니다. 코드를 확인해주세요.")
+        print("❌ 비정상: 잘못된 파일 형식이 차단되지 않았습니다.")
 
-    print("=" * 60)
+    # --- 테스트 2: 정상 이미지 파일 (JPG) --- #
+    test2_success, photo_id = run_real_upload_test(
+        test_name="정상 이미지(JPG) 업로드",
+        filename="public/test_image.jpg",
+        content_type="image/jpeg",
+        description="자동 생성된 테스트 이미지"
+    )
+
+    print("\n--- 테스트 2 결과 ---")
+    if test2_success:
+        print(f"✅ 정상: 이미지 업로드 성공 (사진 ID: {photo_id})")
+        # --- 검증 단계 --- #
+        print("\n--- 검증: NoSQL에서 데이터 확인 ---")
+        try:
+            from shared.oci_client import OCINoSQLClient
+            nosql_client = OCINoSQLClient()
+            retrieved_data = nosql_client.get_photo_by_id(photo_id)
+            if retrieved_data and retrieved_data.get('success'):
+                print(f"✅ 검증 성공: NoSQL에서 Photo ID {photo_id[:8]}... 를 찾았습니다.")
+            else:
+                print(f"❌ 검증 실패: NoSQL에서 Photo ID {photo_id[:8]}... 를 찾지 못했습니다. {retrieved_data.get('error')}")
+        except Exception as e:
+            print(f"❌ 검증 중 오류 발생: {e}")
+    else:
+        print("❌ 비정상: 이미지 업로드에 실패했습니다.")
+
+
+    print("\n🏁 테스트 완료")

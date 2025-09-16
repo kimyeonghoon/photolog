@@ -10,7 +10,7 @@ class Config:
 
     # OCI Object Storage 설정
     OCI_NAMESPACE: str = os.getenv('OCI_NAMESPACE', 'your-tenancy-namespace')
-    OCI_BUCKET_NAME: str = os.getenv('OCI_BUCKET_NAME', 'photolog-storage')
+    OCI_BUCKET_NAME: str = os.getenv('OCI_BUCKET_NAME', 'your-bucket-name')
     OCI_REGION: str = os.getenv('OCI_REGION', 'ap-chuncheon-1')
 
     # OCI NoSQL Database 설정
