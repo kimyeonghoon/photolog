@@ -308,7 +308,7 @@ def get_photo_list(limit: int = 20, page: str = None, order_by: str = 'upload_ti
     """
     try:
         # 통합 스토리지 서비스 초기화
-        storage_type = os.getenv('STORAGE_TYPE', 'LOCAL')
+        storage_type = os.getenv('STORAGE_TYPE', 'OCI')
         service = UnifiedStorageService(storage_type)
 
         # 사진 목록 조회
@@ -368,7 +368,7 @@ def get_photo_metadata(photo_id: str) -> dict:
         dict: 사진 메타데이터
     """
     try:
-        storage_type = os.getenv('STORAGE_TYPE', 'LOCAL')
+        storage_type = os.getenv('STORAGE_TYPE', 'OCI')
         service = UnifiedStorageService(storage_type)
         metadata = service.get_photo_metadata(photo_id)
 
@@ -395,7 +395,7 @@ def search_photos_by_location(latitude: float, longitude: float, radius_km: floa
         dict: 검색된 사진 목록
     """
     try:
-        storage_type = os.getenv('STORAGE_TYPE', 'LOCAL')
+        storage_type = os.getenv('STORAGE_TYPE', 'OCI')
         service = UnifiedStorageService(storage_type)
         result = service.search_photos_by_location(latitude, longitude, radius_km, limit)
 

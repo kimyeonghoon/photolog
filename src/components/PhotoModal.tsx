@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { LocationDisplay } from './LocationDisplay';
 import type { UnifiedPhotoData } from '../types';
 import './PhotoModal.css';
@@ -22,6 +22,51 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
   currentIndex,
   totalCount
 }) => {
+  const [originalImageUrl, setOriginalImageUrl] = useState<string | null>(null);
+  const [isImageLoading, setIsImageLoading] = useState(false);
+  const [imageLoadError, setImageLoadError] = useState(false);
+
+  // 모달이 열릴 때 원본 이미지 URL 로드
+  useEffect(() => {
+    if (isOpen && photo) {
+      setIsImageLoading(true);
+      setImageLoadError(false);
+
+      // 원본 이미지 URL 결정
+      const originalUrl = photo.file_url ||
+                         (photo.file ? URL.createObjectURL(photo.file) : '');
+
+      if (originalUrl) {
+        // 이미지 미리 로딩
+        const img = new Image();
+        img.onload = () => {
+          setOriginalImageUrl(originalUrl);
+          setIsImageLoading(false);
+        };
+        img.onerror = () => {
+          setImageLoadError(true);
+          setIsImageLoading(false);
+          // 에러 시 썸네일 URL을 fallback으로 사용
+          setOriginalImageUrl(
+            photo.thumbnail_urls?.large ||
+            photo.thumbnail_urls?.medium ||
+            photo.thumbnail?.dataUrl ||
+            ''
+          );
+        };
+        img.src = originalUrl;
+      } else {
+        setIsImageLoading(false);
+        setImageLoadError(true);
+      }
+    } else {
+      // 모달이 닫힐 때 상태 초기화
+      setOriginalImageUrl(null);
+      setIsImageLoading(false);
+      setImageLoadError(false);
+    }
+  }, [isOpen, photo]);
+
   // ESC 키로 모달 닫기
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
@@ -115,14 +160,34 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
               </button>
             )}
             
-            <img
-              src={
-                photo.file_url ||
-                (photo.file ? URL.createObjectURL(photo.file) : '')
-              }
-              alt={photo.description || '사진'}
-              className="photo-modal-image"
-            />
+            {isImageLoading ? (
+              <div className="image-loading-placeholder">
+                <div className="loading-spinner"></div>
+                <div className="loading-text">원본 이미지 로딩 중...</div>
+                {/* 로딩 중에는 썸네일을 미리보기로 표시 */}
+                <img
+                  src={
+                    photo.thumbnail_urls?.large ||
+                    photo.thumbnail_urls?.medium ||
+                    photo.thumbnail?.dataUrl ||
+                    ''
+                  }
+                  alt={photo.description || '사진 썸네일'}
+                  className="photo-modal-image loading-preview"
+                  style={{ opacity: 0.7, filter: 'blur(1px)' }}
+                />
+              </div>
+            ) : (
+              <img
+                src={originalImageUrl ||
+                     photo.thumbnail_urls?.large ||
+                     photo.thumbnail_urls?.medium ||
+                     photo.thumbnail?.dataUrl ||
+                     ''}
+                alt={photo.description || '사진'}
+                className="photo-modal-image"
+              />
+            )}
             
             {onNext && (
               <button 

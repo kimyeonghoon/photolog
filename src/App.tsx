@@ -5,6 +5,7 @@ import { MapPage } from './pages/MapPage'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { uploadMultiplePhotos, PhotoAPIClient } from './services/photoAPI'
 import type { UnifiedPhotoData } from './types'
+import type { ThumbnailResult } from './utils/thumbnailGenerator'
 import './App.css'
 import './components/MultiPhotoUpload.css'
 import './styles/theme.css'
@@ -62,17 +63,8 @@ function App() {
             file: null, // 서버에서 불러온 데이터는 File 객체가 없음
             description: photo.description || '',
             location: photo.location || undefined,
-            thumbnail: photo.thumbnail_urls?.medium ? {
-              dataUrl: photo.thumbnail_urls.medium,
-              width: 400,
-              height: 400,
-              size: 0
-            } : undefined,
-            standardThumbnails: photo.thumbnail_urls ? {
-              small: { dataUrl: photo.thumbnail_urls.small, width: 150, height: 150, size: 0 },
-              medium: { dataUrl: photo.thumbnail_urls.medium, width: 400, height: 400, size: 0 },
-              large: { dataUrl: photo.thumbnail_urls.large, width: 800, height: 600, size: 0 }
-            } : {},
+            thumbnail: undefined, // 서버 데이터는 thumbnail (로컬 dataUrl) 사용하지 않음
+            standardThumbnails: undefined, // 서버 데이터는 standardThumbnails (로컬 dataUrl) 사용하지 않음
             exifData: photo.exif_data || null,
             uploadedAt: new Date(photo.upload_timestamp || Date.now()),
             serverData: {
@@ -101,16 +93,79 @@ function App() {
     setIsUploading(true);
 
     try {
-      console.log(`API로 업로드할 사진 ${dataArray.length}개:`, dataArray);
+      console.log(`🚀 handleUpload 호출됨 - 받은 데이터:`, dataArray);
+      console.log(`🔍 데이터 타입 및 구조 확인:`, dataArray.map(data => ({
+        filename: data.file?.name,
+        hasStandardThumbnails: !!data.standardThumbnails,
+        standardThumbnailsType: typeof data.standardThumbnails,
+        keys: data.standardThumbnails ? Object.keys(data.standardThumbnails) : 'N/A',
+        actualValue: data.standardThumbnails
+      })));
+
+      console.log(`📋 API로 업로드할 사진 ${dataArray.length}개:`, dataArray);
+
+      // 썸네일 데이터 디버깅
+      dataArray.forEach((data, index) => {
+        console.log(`📸 사진 ${index + 1}:`, {
+          filename: data.file.name,
+          hasStandardThumbnails: !!data.standardThumbnails,
+          thumbnailSizes: data.standardThumbnails ? Object.keys(data.standardThumbnails) : [],
+          thumbnailInfo: data.standardThumbnails ? Object.entries(data.standardThumbnails).map(([size, thumb]) => ({
+            size,
+            hasDataUrl: !!thumb?.dataUrl,
+            width: thumb?.width,
+            height: thumb?.height
+          })) : []
+        });
+      });
 
       // API를 통한 업로드 (처리된 데이터와 함께)
-      const uploadFilesWithData = dataArray.map(data => ({
-        file: data.file,
-        description: data.description,
-        thumbnails: data.standardThumbnails,
-        exifData: data.exifData,
-        location: data.location
-      }));
+      const uploadFilesWithData = dataArray.map(data => {
+        // standardThumbnails를 PhotoAPI가 기대하는 형태로 변환
+        console.log(`🔍 변환 전 standardThumbnails (${data.file.name}):`, data.standardThumbnails);
+
+        let thumbnails: { [key: string]: { dataUrl: string } } | undefined;
+        if (data.standardThumbnails) {
+          thumbnails = {};
+          console.log(`📝 변환 시작 - entries:`, Object.entries(data.standardThumbnails));
+
+          Object.entries(data.standardThumbnails).forEach(([size, thumbnailResult]) => {
+            console.log(`🔧 처리 중 - ${size}:`, {
+              hasResult: !!thumbnailResult,
+              hasDataUrl: !!thumbnailResult?.dataUrl,
+              dataUrlLength: thumbnailResult?.dataUrl?.length || 0
+            });
+
+            if (thumbnailResult?.dataUrl) {
+              thumbnails![size] = { dataUrl: thumbnailResult.dataUrl };
+              console.log(`✅ 변환 성공 - ${size}`);
+            } else {
+              console.log(`❌ 변환 실패 - ${size}: dataUrl 없음`);
+            }
+          });
+
+          console.log(`📊 변환 후 thumbnails:`, Object.keys(thumbnails));
+        } else {
+          console.log(`❌ standardThumbnails가 없습니다`);
+        }
+
+        const result = {
+          file: data.file,
+          description: data.description,
+          thumbnails,
+          exifData: data.exifData,
+          location: data.location
+        };
+
+        // 변환된 썸네일 데이터 로그
+        console.log(`🔄 변환된 썸네일 데이터 (${data.file.name}):`, {
+          hasThumbnails: !!thumbnails,
+          thumbnailSizes: thumbnails ? Object.keys(thumbnails) : [],
+          thumbnailCount: thumbnails ? Object.keys(thumbnails).length : 0
+        });
+
+        return result;
+      });
 
       const results = await uploadMultiplePhotos(
         uploadFilesWithData,

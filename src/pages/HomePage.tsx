@@ -291,10 +291,11 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
                   <div className="photo-image">
                     <img
                       src={
+                        photo.thumbnail_urls?.medium ||
                         photo.thumbnail?.dataUrl ||
                         photo.thumbnail_urls?.small ||
-                        photo.file_url ||
-                        (photo.file ? URL.createObjectURL(photo.file) : '')
+                        (photo.file ? URL.createObjectURL(photo.file) : '') ||
+                        photo.file_url
                       }
                       alt={photo.description || '여행 사진'}
                       loading="lazy"

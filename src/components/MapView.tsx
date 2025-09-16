@@ -126,8 +126,8 @@ export const MapView: React.FC<MapViewProps> = ({ className, photos = [] }) => {
         html: `
           <div class="photo-marker-content" data-photo-index="${index}">
             <div class="photo-marker-thumbnail">
-              ${photo.thumbnail?.dataUrl || photo.thumbnail_urls?.small || photo.file_url
-                ? `<img src="${photo.thumbnail?.dataUrl || photo.thumbnail_urls?.small || photo.file_url}" alt="${photo.description}" />`
+              ${photo.thumbnail_urls?.small || photo.thumbnail?.dataUrl
+                ? `<img src="${photo.thumbnail_urls?.small || photo.thumbnail?.dataUrl}" alt="${photo.description}" />`
                 : `<div class="photo-marker-fallback">📸</div>`
               }
             </div>
@@ -206,8 +206,8 @@ export const MapView: React.FC<MapViewProps> = ({ className, photos = [] }) => {
         const popupContent = `
           <div class="photo-popup">
             <div class="photo-popup-image">
-              ${photo.thumbnail?.dataUrl || photo.thumbnail_urls?.medium || photo.file_url
-                ? `<img src="${photo.thumbnail?.dataUrl || photo.thumbnail_urls?.medium || photo.file_url}" alt="${displayDescription}" />`
+              ${photo.thumbnail_urls?.medium || photo.thumbnail?.dataUrl
+                ? `<img src="${photo.thumbnail_urls?.medium || photo.thumbnail?.dataUrl}" alt="${displayDescription}" />`
                 : `<div class="photo-placeholder">📸</div>`
               }
             </div>

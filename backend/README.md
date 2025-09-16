@@ -45,6 +45,31 @@ backend/
 - 위치 정보 추출
 - 지오코딩 서비스 연동
 
+## ⚙️ 환경 설정
+
+### 스토리지 설정
+기본적으로 **OCI Object Storage**를 사용하며, OCI 설정이 없을 경우 자동으로 로컬 스토리지로 fallback됩니다.
+
+**프로덕션 환경** (기본값):
+```bash
+# 환경변수 없음 또는 명시적 설정
+export STORAGE_TYPE=OCI
+```
+
+**로컬 개발 환경**:
+```bash
+# 로컬 테스트용
+export STORAGE_TYPE=LOCAL
+```
+
+### OCI 필수 환경변수
+```bash
+export OCI_NAMESPACE=your-tenancy-namespace
+export OCI_BUCKET_NAME=photolog-storage
+export OCI_REGION=ap-chuncheon-1
+export NOSQL_COMPARTMENT_ID=your-compartment-id
+```
+
 ## 📝 개발 가이드
 
 1. 각 함수는 독립적인 디렉토리에서 개발

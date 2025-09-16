@@ -266,16 +266,27 @@ export const MultiPhotoUpload: React.FC<MultiPhotoUploadProps> = ({ onUpload, on
 
   // 서버 전송용 표준 썸네일들 생성
   const generateStandardThumbnails = useCallback(async (file: File): Promise<{ [key: string]: ThumbnailResult } | null> => {
+    console.log(`🔍 썸네일 생성 가능 여부 확인: ${file.name}`, {
+      type: file.type,
+      size: file.size,
+      name: file.name
+    });
+
     const canCreate = canCreateThumbnail(file);
+    console.log(`✅ 썸네일 생성 가능 여부:`, canCreate);
+
     if (!canCreate.canCreate) {
-      console.warn(`표준 썸네일 생성 불가: ${canCreate.reason}`);
+      console.warn(`❌ 표준 썸네일 생성 불가: ${canCreate.reason}`);
       return null;
     }
 
     try {
-      return await createStandardThumbnails(file);
+      console.log(`🚀 createStandardThumbnails 호출 중...`);
+      const result = await createStandardThumbnails(file);
+      console.log(`✅ createStandardThumbnails 완료:`, result);
+      return result;
     } catch (error) {
-      console.warn('표준 썸네일 생성 실패:', error);
+      console.error('❌ 표준 썸네일 생성 실패:', error);
       return null;
     }
   }, []);
@@ -317,9 +328,24 @@ export const MultiPhotoUpload: React.FC<MultiPhotoUploadProps> = ({ onUpload, on
       }));
 
       // 서버 전송용 표준 썸네일들 생성
+      console.log(`🖼️ 표준 썸네일 생성 시작: ${fileData.file.name}`);
       const standardThumbnails = await generateStandardThumbnails(fileData.file);
+      console.log(`📊 표준 썸네일 생성 결과:`, {
+        filename: fileData.file.name,
+        success: !!standardThumbnails,
+        thumbnailCount: standardThumbnails ? Object.keys(standardThumbnails).length : 0,
+        thumbnailSizes: standardThumbnails ? Object.keys(standardThumbnails) : []
+      });
 
       // 완료 상태로 변경
+      console.log(`🔄 상태 업데이트 전 - standardThumbnails:`, {
+        fileId: fileData.id,
+        filename: fileData.file.name,
+        hasStandardThumbnails: !!standardThumbnails,
+        thumbnailKeys: standardThumbnails ? Object.keys(standardThumbnails) : [],
+        standardThumbnails
+      });
+
       setState(prev => ({
         ...prev,
         files: prev.files.map(f =>
@@ -336,6 +362,7 @@ export const MultiPhotoUpload: React.FC<MultiPhotoUploadProps> = ({ onUpload, on
             : f
         )
       }));
+
 
     } catch (error) {
       console.error('파일 처리 실패:', error);
@@ -469,21 +496,52 @@ export const MultiPhotoUpload: React.FC<MultiPhotoUploadProps> = ({ onUpload, on
   // 업로드 완료 처리 (먼저 정의)
   const handleUploadComplete = useCallback(() => {
     const completedFiles = state.files.filter(f => f.status === 'completed');
-    
+
     if (completedFiles.length > 0) {
+      console.log(`📤 업로드 완료된 파일들:`, completedFiles);
+
       // 설명 조합 로직: 개별 설명이 있으면 "전체설명 - 개별설명", 없으면 "전체설명"
       const filesWithDescriptions = completedFiles.map(file => {
         const individualDesc = file.description?.trim();
-        return {
+
+        // 디버깅: 원본 파일 데이터 확인
+        console.log(`🔍 원본 파일 데이터 (${file.file.name}):`, {
+          hasStandardThumbnails: !!file.standardThumbnails,
+          standardThumbnailsType: typeof file.standardThumbnails,
+          thumbnailSizes: file.standardThumbnails ? Object.keys(file.standardThumbnails) : [],
+          allKeys: Object.keys(file),
+          standardThumbnails: file.standardThumbnails
+        });
+
+        const result = {
           ...file,
-          description: individualDesc 
+          description: individualDesc
             ? `${state.globalDescription} - ${individualDesc}`
             : state.globalDescription
         };
+
+        console.log(`📦 스프레드 후 결과 데이터 (${file.file.name}):`, {
+          hasStandardThumbnails: !!result.standardThumbnails,
+          thumbnailSizes: result.standardThumbnails ? Object.keys(result.standardThumbnails) : [],
+          standardThumbnails: result.standardThumbnails
+        });
+
+        return result;
       });
-      
+
+      // 최종 검증: onUpload 호출 직전 데이터 확인
+      filesWithDescriptions.forEach((file, index) => {
+        console.log(`🔍 최종 검증 ${index + 1} (${file.file.name}):`, {
+          hasStandardThumbnails: !!file.standardThumbnails,
+          thumbnailKeys: file.standardThumbnails ? Object.keys(file.standardThumbnails) : [],
+          allKeys: Object.keys(file),
+          standardThumbnails: file.standardThumbnails
+        });
+      });
+
+      console.log(`🚀 onUpload 호출 - 전달할 데이터:`, filesWithDescriptions);
       onUpload(filesWithDescriptions);
-      
+
       // URL 정리 후 초기화
       setState(prev => {
         prev.files.forEach(file => {
@@ -491,7 +549,7 @@ export const MultiPhotoUpload: React.FC<MultiPhotoUploadProps> = ({ onUpload, on
             URL.revokeObjectURL(file.previewUrl);
           }
         });
-        
+
         return { ...prev, files: [], globalDescription: '' };
       });
     }

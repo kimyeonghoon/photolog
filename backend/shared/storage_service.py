@@ -258,7 +258,7 @@ class StorageServiceFactory:
             StorageInterface: 스토리지 서비스 인스턴스
         """
         if storage_type is None:
-            storage_type = os.getenv('STORAGE_TYPE', 'LOCAL').upper()
+            storage_type = os.getenv('STORAGE_TYPE', 'OCI').upper()
 
         if storage_type == 'OCI':
             try:
@@ -332,11 +332,39 @@ class UnifiedStorageService:
 
             results["original"] = original_result
 
-            # 썸네일 업로드
+            # 썸네일 처리 및 업로드
             thumbnail_urls = {}
+
+            # 썸네일이 비어있거나 없으면 자동 생성 (프론트엔드 썸네일 우선)
+            if not thumbnails or len(thumbnails) == 0:
+                print("🔧 프론트엔드 썸네일이 없어서 백엔드에서 자동 생성합니다")
+            else:
+                print(f"✅ 프론트엔드 썸네일 사용: {list(thumbnails.keys())}")
+
+            if not thumbnails or len(thumbnails) == 0:
+                try:
+                    from .thumbnail_generator import ThumbnailGenerator
+                    thumbnail_generator = ThumbnailGenerator()
+                    generated_thumbnails = thumbnail_generator.create_thumbnails(file_content)
+
+                    # 생성된 썸네일을 적절한 형식으로 변환
+                    thumbnails = {}
+                    for size, thumb_info in generated_thumbnails.items():
+                        thumbnails[size] = {
+                            'data': thumb_info['data'],
+                            'width': thumb_info['width'],
+                            'height': thumb_info['height']
+                        }
+                    print(f"✅ 자동 썸네일 생성 완료: {list(thumbnails.keys())}")
+
+                except Exception as e:
+                    print(f"⚠️ 썸네일 자동 생성 실패: {str(e)}")
+                    thumbnails = {}
+
+            # 썸네일 업로드 (경로 수정)
             if thumbnails:
                 for size, thumbnail_data in thumbnails.items():
-                    thumbnail_object_name = f"thumbnails/{size}/{photo_id}_{size}.jpg"
+                    thumbnail_object_name = f"thumbnails/{photo_id}_{size}.jpg"
 
                     thumbnail_result = self.storage.upload_file(
                         file_content=thumbnail_data["data"],
@@ -428,14 +456,25 @@ class UnifiedStorageService:
 
             # 썸네일 파일 목록도 가져오기 (존재 여부 확인용)
             thumbnail_files = self.storage.list_files("thumbnails/")
-            existing_thumbnails = set()
+            existing_thumbnails = {}  # photo_id -> {size: url} 매핑
+
             for thumb_file in thumbnail_files:
-                # thumbnails/small/photo_id_small.jpg -> photo_id 추출
-                parts = thumb_file.get('object_name', '').split('/')
-                if len(parts) >= 3:
-                    filename = parts[-1]  # photo_id_small.jpg
-                    photo_id = filename.split('_')[0]  # photo_id
-                    existing_thumbnails.add(photo_id)
+                # thumbnails/photo_id_size.jpg -> photo_id 추출
+                object_name = thumb_file.get('object_name', '')
+                if object_name.startswith('thumbnails/'):
+                    filename = object_name.split('/')[-1]  # photo_id_size.jpg
+                    name_parts = filename.split('_')  # [photo_id, size.jpg]
+                    if len(name_parts) >= 2:
+                        photo_id = name_parts[0]
+                        size_with_ext = '_'.join(name_parts[1:])  # size.jpg
+                        size = size_with_ext.split('.')[0]  # size
+
+                        if photo_id not in existing_thumbnails:
+                            existing_thumbnails[photo_id] = {}
+
+                        # URL 생성
+                        base_url = thumb_file.get('url', '').replace(f'/o/{object_name}', '/o')
+                        existing_thumbnails[photo_id][size] = f"{base_url}/{object_name}"
 
             # 파일 정보를 사진 목록 형태로 변환
             photos = []
@@ -447,14 +486,7 @@ class UnifiedStorageService:
                     photo_id = filename.split('.')[0]
 
                     # 썸네일 URL 구성 (실제 존재하는 경우만)
-                    base_url = file_info.get('url', '').replace(f'/o/photos/{filename}', '/o')
-                    thumbnail_urls = {}
-
-                    if photo_id in existing_thumbnails:
-                        thumbnail_urls = {
-                            "small": f"{base_url}/thumbnails/small/{photo_id}_small.jpg",
-                            "medium": f"{base_url}/thumbnails/medium/{photo_id}_medium.jpg"
-                        }
+                    thumbnail_urls = existing_thumbnails.get(photo_id, {})
 
                     photo_data = {
                         "photo_id": photo_id,
