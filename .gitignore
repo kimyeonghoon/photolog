@@ -109,3 +109,7 @@ public/test_*.png
 
 # New photo upload function directory
 backend/functions/photo_upload/
+
+# Docker files
+backend/.env
+backend/.dockerignore

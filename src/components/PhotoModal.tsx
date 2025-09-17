@@ -24,7 +24,7 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
 }) => {
   const [originalImageUrl, setOriginalImageUrl] = useState<string | null>(null);
   const [isImageLoading, setIsImageLoading] = useState(false);
-  const [imageLoadError, setImageLoadError] = useState(false);
+  const [, setImageLoadError] = useState(false);
 
   // 모달이 열릴 때 원본 이미지 URL 로드
   useEffect(() => {
@@ -124,7 +124,7 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
     ? new Date(photo.exifData.timestamp) 
     : photo.uploadedAt;
   
-  const dateTime = formatDateTime(actualCaptureTime);
+  const dateTime = actualCaptureTime ? formatDateTime(actualCaptureTime) : '날짜 정보 없음';
   const isExifTime = !!photo.exifData?.timestamp;
   
 
@@ -214,12 +214,16 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
               
               <div className="info-item">
                 <span className="info-label">📅 {isExifTime ? '촬영 날짜' : '업로드 날짜'}:</span>
-                <span className="info-value">{dateTime.date} {isExifTime && '(EXIF)'}</span>
+                <span className="info-value">
+                  {typeof dateTime === 'string' ? dateTime : `${dateTime.date} ${isExifTime ? '(EXIF)' : ''}`}
+                </span>
               </div>
-              
+
               <div className="info-item">
                 <span className="info-label">⏰ {isExifTime ? '촬영 시간' : '업로드 시간'}:</span>
-                <span className="info-value">{dateTime.time} {isExifTime && '(EXIF)'}</span>
+                <span className="info-value">
+                  {typeof dateTime === 'string' ? '' : `${dateTime.time} ${isExifTime ? '(EXIF)' : ''}`}
+                </span>
               </div>
               
               <div className="info-item">

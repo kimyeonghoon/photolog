@@ -9,7 +9,14 @@ import os
 import sys
 import io
 from urllib.parse import urlparse, parse_qs
-from test_func_local import local_photo_upload_handler
+import sys
+import os
+
+# Docker 환경에서의 경로 설정
+current_dir = os.path.dirname(os.path.abspath(__file__)) if __file__ else '/app/tests'
+sys.path.insert(0, current_dir)
+sys.path.insert(0, os.path.join(current_dir, '..'))
+
 from test_func_unified import handler_unified
 
 class PhotoAPIHandler(BaseHTTPRequestHandler):

@@ -53,7 +53,7 @@ export interface UnifiedPhotoData {
   file_size?: number;
 
   // 로컬 데이터 필드
-  file?: File;
+  file?: File | null;
   thumbnail?: {
     dataUrl: string;
     width: number;

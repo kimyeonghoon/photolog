@@ -320,13 +320,15 @@ export class PhotoAPIClient {
             return {
               success: true,
               message: '업로드 성공',
-              data: fileResult.data
+              data: fileResult.data,
+              timestamp: new Date().toISOString()
             };
           } else {
             return {
               success: false,
               message: fileResult.error || '업로드 실패',
-              data: undefined
+              data: undefined,
+              timestamp: new Date().toISOString()
             };
           }
         });

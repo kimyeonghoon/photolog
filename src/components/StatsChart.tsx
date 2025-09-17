@@ -31,7 +31,7 @@ export const StatsChart: React.FC<StatsChartProps> = ({ photos }) => {
       }
     }
     // EXIF 촬영시간이 없으면 업로드 시간 사용
-    return new Date(photo.uploadedAt);
+    return new Date(photo.uploadedAt || Date.now());
   };
   // 지역별 통계 계산 (위도/경도 기반 대략적 지역 분류)
   const getRegionStats = (): LocationStats[] => {
@@ -260,7 +260,7 @@ export const StatsChart: React.FC<StatsChartProps> = ({ photos }) => {
                   if (photos.length === 0) return 0;
                   
                   // 첫 업로드와 마지막 업로드 날짜 구하기
-                  const dates = photos.map(p => new Date(p.uploadedAt));
+                  const dates = photos.map(p => new Date(p.uploadedAt || Date.now()));
                   const firstDate = new Date(Math.min(...dates.map(d => d.getTime())));
                   const lastDate = new Date(Math.max(...dates.map(d => d.getTime())));
                   

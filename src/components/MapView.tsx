@@ -57,7 +57,7 @@ export const MapView: React.FC<MapViewProps> = ({ className, photos = [] }) => {
     }
     
     // 3. 업로드 시간 최후
-    return photo.uploadedAt;
+    return photo.uploadedAt || new Date();
   };
 
   // 날짜별 사진 그룹핑 함수 (촬영 시간 기준)

@@ -1,0 +1,12 @@
+# Python 백엔드 의존성 패키지
+
+# Oracle Cloud Infrastructure SDK
+oci==2.160.0
+
+# 이미지 처리
+Pillow==10.0.0
+
+# 기본 웹 서버 (내장 HTTP 서버 사용하므로 추가 프레임워크 불필요)
+
+# 개발 및 디버깅
+python-dotenv==1.0.0

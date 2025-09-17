@@ -51,7 +51,7 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
       }
     }
     // EXIF 촬영시간이 없으면 업로드 시간 사용
-    return new Date(photo.uploadedAt);
+    return new Date(photo.uploadedAt || Date.now());
   };
 
   // 사진 정렬 (EXIF 촬영시간 우선, 없으면 업로드 시간)
@@ -90,7 +90,7 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
     // 이번 달 업로드 수
     const thisMonth = new Date();
     const thisMonthPhotos = photos.filter(photo => {
-      const photoDate = new Date(photo.uploadedAt);
+      const photoDate = new Date(photo.uploadedAt || Date.now());
       return photoDate.getMonth() === thisMonth.getMonth() && 
              photoDate.getFullYear() === thisMonth.getFullYear();
     }).length;
