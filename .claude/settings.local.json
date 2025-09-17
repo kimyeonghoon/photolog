@@ -1,7 +1,35 @@
 {
   "permissions": {
     "allow": [
-      "Bash(NOSQL_COMPARTMENT_ID=ocid1.tenancy.oc1..aaaaaaaayjjulcyf6jtw3slbdxockiwt2cfbzg2z75sumuamy6njcce3a4ma NOSQL_TABLE_NAME=photolog_photos PYTHONPATH=backend/tests:backend python3 -c \"\nimport sys\nsys.path.append(''backend'')\n\ntry:\n    from backend.shared.nosql_client import OCINoSQLClient\n    print(''✅ NoSQL 클라이언트 import 성공'')\n    \n    client = OCINoSQLClient()\n    print(''✅ NoSQL 클라이언트 초기화 성공'')\n    \n    # 최근 업로드한 EXIF 테스트 사진 직접 조회\n    photo_id = ''1d34b40d-9366-4736-8b51-356931f32403''\n    result = client.get_photo_metadata(photo_id)\n    \n    if result:\n        print(f''📷 사진 발견: {photo_id}'')\n        print(f''📍 위치 타입: {type(result.get(\"\"location\"\"))}'')\n        print(f''📍 위치 값: {result.get(\"\"location\"\")}'')\n        print(f''📷 EXIF 타입: {type(result.get(\"\"exif_data\"\"))}'')\n        print(f''📷 EXIF 값: {result.get(\"\"exif_data\"\")}'')\n        \n        if result.get(''exif_data''):\n            import json\n            if isinstance(result[''exif_data''], str):\n                print(''📋 EXIF 데이터 (파싱됨):'')\n                try:\n                    exif_parsed = json.loads(result[''exif_data''])\n                    for key, value in exif_parsed.items():\n                        print(f''   {key}: {value}'')\n                except:\n                    print(''   JSON 파싱 실패'')\n            else:\n                print(f''   EXIF 데이터 (dict): {result[\"\"exif_data\"\"]}'')\n    else:\n        print(f''❌ 사진을 찾을 수 없음: {photo_id}'')\n        \nexcept Exception as e:\n    import traceback\n    print(f''❌ 오류: {e}'')\n    traceback.print_exc()\n\")"
+      "Bash(rm:*)",
+      "Bash(git check-ignore backend/.env)",
+      "Bash(git reset:*)",
+      "Bash(python3:*)",
+      "Bash(lsof:*)",
+      "Bash(npm run dev:*)",
+      "Bash(curl:*)",
+      "Bash(pkill:*)",
+      "Bash(xargs kill:*)",
+      "Bash(export STORAGE_TYPE=OCI)",
+      "Bash(export OCI_NAMESPACE=test-namespace)",
+      "Bash(export OCI_BUCKET_NAME=photolog-storage)",
+      "Bash(export NOSQL_COMPARTMENT_ID=test-compartment)",
+      "Bash(kill:*)",
+      "Bash(export STORAGE_TYPE=LOCAL)",
+      "Read(//home/kim-yeonghoon/.oci/**)",
+      "Bash(oci os ns get:*)",
+      "Bash(oci os bucket list:*)",
+      "Bash(oci iam compartment list:*)",
+      "Bash(export SUPPRESS_LABEL_WARNING=True)",
+      "Bash(export OCI_NAMESPACE=axjum7if9qlb)",
+      "Bash(export NOSQL_COMPARTMENT_ID=ocid1.tenancy.oc1..aaaaaaaayjjulcyf6jtw3slbdxockiwt2cfbzg2z75sumuamy6njcce3a4ma)",
+      "Bash(oci nosql table list:*)",
+      "Bash(git add:*)",
+      "Bash(source .env)",
+      "Bash(sudo fuser:*)",
+      "Bash(export OCI_REGION=ap-chuncheon-1)",
+      "Bash(export NOSQL_TABLE_NAME=photos)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []

@@ -369,3 +369,169 @@
     color: rgba(255, 255, 255, 0.8);
   }
 }
+
+/* 삭제 확인 다이얼로그 */
+.delete-confirm-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  animation: fadeIn 0.2s ease;
+}
+
+.delete-confirm-dialog {
+  background: white;
+  border-radius: 16px;
+  min-width: 400px;
+  max-width: 500px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.delete-confirm-header {
+  padding: 20px 24px 0;
+  border-bottom: 1px solid #e9ecef;
+  margin-bottom: 20px;
+}
+
+.delete-confirm-header h3 {
+  margin: 0 0 16px 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #212529;
+  text-align: center;
+}
+
+.delete-confirm-content {
+  padding: 0 24px 20px;
+  text-align: center;
+}
+
+.delete-photo-preview {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.delete-confirm-content p {
+  margin: 0 0 12px 0;
+  color: #495057;
+  line-height: 1.5;
+}
+
+.delete-warning {
+  color: #dc3545 !important;
+  font-size: 0.9rem;
+  background: rgba(220, 53, 69, 0.1);
+  padding: 12px;
+  border-radius: 8px;
+  border-left: 4px solid #dc3545;
+  margin-top: 16px !important;
+}
+
+.delete-confirm-actions {
+  display: flex;
+  gap: 12px;
+  padding: 20px 24px;
+  border-top: 1px solid #e9ecef;
+  background: #f8f9fa;
+  border-radius: 0 0 16px 16px;
+}
+
+.modal-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modal-delete-button {
+  background: transparent;
+  border: 2px solid #dc3545;
+  color: #dc3545;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  height: 44px;
+}
+
+.modal-delete-button:hover:not(:disabled) {
+  background: #dc3545;
+  color: white;
+  transform: translateY(-1px);
+}
+
+.modal-delete-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 다크 모드 지원 */
+@media (prefers-color-scheme: dark) {
+  .delete-confirm-dialog {
+    background: #2d2d2d;
+    color: #ffffff;
+  }
+
+  .delete-confirm-header {
+    border-color: #404040;
+  }
+
+  .delete-confirm-header h3 {
+    color: #ffffff;
+  }
+
+  .delete-confirm-content p {
+    color: #e9ecef;
+  }
+
+  .delete-confirm-actions {
+    background: #1a1a1a;
+    border-color: #404040;
+  }
+}
+
+/* 모바일 반응형 */
+@media (max-width: 768px) {
+  .delete-confirm-dialog {
+    min-width: 320px;
+    margin: 20px;
+  }
+
+  .delete-confirm-content {
+    padding: 0 16px 16px;
+  }
+
+  .delete-confirm-actions {
+    padding: 16px;
+    gap: 8px;
+  }
+
+  .delete-confirm-actions .btn {
+    flex: 1;
+    padding: 12px;
+  }
+}

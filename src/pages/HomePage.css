@@ -319,6 +319,81 @@
   gap: 16px;
 }
 
+.header-left {
+  flex: 1;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.divider {
+  width: 1px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.3);
+  margin: 0 4px;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.9);
+  transition: all 0.3s ease;
+}
+
+.btn-outline:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.6);
+  color: white;
+  transform: translateY(-1px);
+}
+
+/* Selection Mode Styles */
+.selection-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.selection-count {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+}
+
+.selection-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.photo-card.selection-mode {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.photo-card.selected {
+  border-color: #4CAF50;
+  background: rgba(76, 175, 80, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+}
+
+.selection-checkbox {
+  font-size: 1.5rem;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+  transition: all 0.2s ease;
+}
+
+.photo-card.selected .selection-checkbox {
+  color: #4CAF50;
+  text-shadow: 0 2px 8px rgba(76, 175, 80, 0.4);
+}
+
 .section-header h2 {
   font-size: 1.5rem;
   font-weight: 600;

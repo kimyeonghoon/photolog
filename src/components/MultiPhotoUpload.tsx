@@ -46,6 +46,7 @@ interface UploadState {
   totalProgress: number;
   globalDescription: string;
   isDragOver: boolean;
+  travelDate: string;
 }
 
 const SUPPORTED_FORMATS = ['image/jpeg', 'image/jpg', 'image/png', 'image/heic'];
@@ -59,6 +60,7 @@ export const MultiPhotoUpload: React.FC<MultiPhotoUploadProps> = ({ onUpload, on
     totalProgress: 0,
     globalDescription: '',
     isDragOver: false,
+    travelDate: '',
   });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -81,7 +83,7 @@ export const MultiPhotoUpload: React.FC<MultiPhotoUploadProps> = ({ onUpload, on
   }, []);
 
   // EXIF 데이터 추출
-  const extractExifData = useCallback(async (file: File): Promise<ExifData | null> => {
+  const extractExifData = useCallback(async (file: File, travelDate?: string): Promise<ExifData | null> => {
     try {
       console.log('EXIF 추출 시작:', file.name);
       
@@ -215,6 +217,12 @@ export const MultiPhotoUpload: React.FC<MultiPhotoUploadProps> = ({ onUpload, on
 
       if (timestamp) {
         exifData.timestamp = timestamp;
+        console.log('EXIF 촬영시간 사용:', timestamp);
+      } else if (travelDate) {
+        // EXIF 촬영시간이 없으면 사용자 입력 여행날짜 사용
+        const travelDateTime = new Date(travelDate + 'T12:00:00'); // 정오로 설정
+        exifData.timestamp = travelDateTime.toISOString();
+        console.log('여행날짜 사용:', exifData.timestamp);
       } else {
         console.log('촬영시간 정보 없음 또는 파싱 실패');
       }
@@ -303,7 +311,7 @@ export const MultiPhotoUpload: React.FC<MultiPhotoUploadProps> = ({ onUpload, on
 
     try {
       // EXIF 데이터 추출
-      const exifData = await extractExifData(fileData.file);
+      const exifData = await extractExifData(fileData.file, state.travelDate);
 
       setState(prev => ({
         ...prev,
@@ -653,6 +661,23 @@ export const MultiPhotoUpload: React.FC<MultiPhotoUploadProps> = ({ onUpload, on
             ⚠️ 전체 설명을 입력해야 업로드할 수 있습니다
           </div>
         )}
+      </div>
+
+      {/* 여행날짜 입력 (선택) */}
+      <div className="travel-date">
+        <label htmlFor="travelDate">
+          📅 여행날짜 (선택)
+        </label>
+        <input
+          id="travelDate"
+          type="date"
+          value={state.travelDate}
+          onChange={(e) => setState(prev => ({ ...prev, travelDate: e.target.value }))}
+          placeholder="EXIF 촬영시간이 없는 사진에 적용됩니다"
+        />
+        <div className="field-description">
+          💡 EXIF 촬영시간이 없는 사진에 이 날짜가 적용됩니다
+        </div>
       </div>
 
       {/* 드래그 앤 드롭 영역 */}

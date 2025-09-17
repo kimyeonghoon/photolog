@@ -132,6 +132,7 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
   const isExifTime = !!photo.exifData?.timestamp;
 
   const handleDeleteClick = () => {
+    // 바로 확인 다이얼로그 표시
     setShowDeleteConfirm(true);
   };
 
