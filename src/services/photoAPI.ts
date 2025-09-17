@@ -426,6 +426,49 @@ export class PhotoAPIClient {
   async getPhoto(photoId: string): Promise<APIPhotosListResponse['data']> {
     return this.makeRequest(`/api/photos/${photoId}`);
   }
+
+  /**
+   * 사진 삭제
+   */
+  async deletePhoto(photoId: string): Promise<{
+    success: boolean;
+    message: string;
+    photo_id: string;
+  }> {
+    return this.makeRequest(`/api/photos/${photoId}`, {
+      method: 'DELETE'
+    });
+  }
+
+  /**
+   * 다중 사진 삭제
+   */
+  async deleteMultiplePhotos(photoIds: string[]): Promise<Array<{
+    photo_id: string;
+    success: boolean;
+    message: string;
+  }>> {
+    const results = [];
+
+    for (const photoId of photoIds) {
+      try {
+        const result = await this.deletePhoto(photoId);
+        results.push({
+          photo_id: photoId,
+          success: result.success,
+          message: result.message
+        });
+      } catch (error) {
+        results.push({
+          photo_id: photoId,
+          success: false,
+          message: error instanceof Error ? error.message : '삭제 실패'
+        });
+      }
+    }
+
+    return results;
+  }
 }
 
 // 기본 인스턴스 생성
@@ -466,4 +509,20 @@ export const checkServerHealth = async (): Promise<boolean> => {
   } catch {
     return false;
   }
+};
+
+export const deleteSinglePhoto = async (photoId: string): Promise<{
+  success: boolean;
+  message: string;
+  photo_id: string;
+}> => {
+  return photoAPI.deletePhoto(photoId);
+};
+
+export const deleteMultiplePhotos = async (photoIds: string[]): Promise<Array<{
+  photo_id: string;
+  success: boolean;
+  message: string;
+}>> => {
+  return photoAPI.deleteMultiplePhotos(photoIds);
 };

@@ -11,6 +11,7 @@ interface PhotoModalProps {
   onNext?: () => void;
   currentIndex?: number;
   totalCount?: number;
+  onDelete?: (photoId: string) => void;
 }
 
 export const PhotoModal: React.FC<PhotoModalProps> = ({
@@ -20,11 +21,14 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
   onPrevious,
   onNext,
   currentIndex,
-  totalCount
+  totalCount,
+  onDelete
 }) => {
   const [originalImageUrl, setOriginalImageUrl] = useState<string | null>(null);
   const [isImageLoading, setIsImageLoading] = useState(false);
   const [, setImageLoadError] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // 모달이 열릴 때 원본 이미지 URL 로드
   useEffect(() => {
@@ -120,12 +124,36 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
   };
 
   // EXIF 촬영시간이 있으면 우선 사용, 없으면 업로드 시간 사용
-  const actualCaptureTime = photo.exifData?.timestamp 
-    ? new Date(photo.exifData.timestamp) 
+  const actualCaptureTime = photo.exifData?.timestamp
+    ? new Date(photo.exifData.timestamp)
     : photo.uploadedAt;
-  
+
   const dateTime = actualCaptureTime ? formatDateTime(actualCaptureTime) : '날짜 정보 없음';
   const isExifTime = !!photo.exifData?.timestamp;
+
+  const handleDeleteClick = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!photo || !onDelete) return;
+
+    setIsDeleting(true);
+    try {
+      await onDelete(photo.id);
+      onClose(); // 삭제 성공 시 모달 닫기
+    } catch (error) {
+      console.error('삭제 실패:', error);
+      // 여기서 에러 알림을 표시할 수 있습니다
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteConfirm(false);
+  };
   
 
   return (
@@ -138,13 +166,26 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
               <span className="photo-counter">{currentIndex + 1} / {totalCount}</span>
             )}
           </div>
-          <button 
-            className="modal-close-button"
-            onClick={onClose}
-            aria-label="모달 닫기"
-          >
-            ✕
-          </button>
+          <div className="modal-actions">
+            {onDelete && (
+              <button
+                className="modal-delete-button"
+                onClick={handleDeleteClick}
+                disabled={isDeleting}
+                aria-label="사진 삭제"
+                title="사진 삭제"
+              >
+                {isDeleting ? '⏳' : '🗑️'}
+              </button>
+            )}
+            <button
+              className="modal-close-button"
+              onClick={onClose}
+              aria-label="모달 닫기"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         {/* 이미지 */}
@@ -262,6 +303,63 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
             <span>💡 키보드: ← → 이동, ESC 닫기</span>
           </div>
         </div>
+
+        {/* 삭제 확인 다이얼로그 */}
+        {showDeleteConfirm && (
+          <div className="delete-confirm-overlay" onClick={handleDeleteCancel}>
+            <div className="delete-confirm-dialog" onClick={(e) => e.stopPropagation()}>
+              <div className="delete-confirm-header">
+                <h3>사진 삭제 확인</h3>
+              </div>
+              <div className="delete-confirm-content">
+                <div className="delete-photo-preview">
+                  <img
+                    src={
+                      photo.thumbnail_urls?.small ||
+                      photo.thumbnail?.dataUrl ||
+                      photo.file_url
+                    }
+                    alt="삭제할 사진"
+                    style={{
+                      width: '80px',
+                      height: '80px',
+                      objectFit: 'cover',
+                      borderRadius: '8px',
+                      margin: '0 auto 16px'
+                    }}
+                  />
+                </div>
+                <p><strong>이 사진을 정말 삭제하시겠습니까?</strong></p>
+                {photo.description && (
+                  <p style={{ fontStyle: 'italic', opacity: 0.8 }}>
+                    "{photo.description}"
+                  </p>
+                )}
+                <p className="delete-warning">
+                  ⚠️ <strong>삭제된 사진은 복구할 수 없습니다.</strong>
+                </p>
+              </div>
+              <div className="delete-confirm-actions">
+                <button
+                  className="btn btn-secondary"
+                  onClick={handleDeleteCancel}
+                  disabled={isDeleting}
+                  style={{ marginRight: '8px' }}
+                >
+                  ❌ 취소
+                </button>
+                <button
+                  className="btn btn-danger"
+                  onClick={handleDeleteConfirm}
+                  disabled={isDeleting}
+                  style={{ fontWeight: 'bold' }}
+                >
+                  {isDeleting ? '🗑️ 삭제 중...' : '🗑️ 삭제하기'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

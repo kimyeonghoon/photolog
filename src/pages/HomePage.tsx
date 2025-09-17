@@ -3,6 +3,7 @@ import { PhotoModal } from '../components/PhotoModal';
 import { StatsChart } from '../components/StatsChart';
 import { LocationDisplay } from '../components/LocationDisplay';
 import { PageHeader } from '../components/PageHeader';
+import { deleteSinglePhoto, deleteMultiplePhotos } from '../services/photoAPI';
 import type { UnifiedPhotoData } from '../types';
 import './HomePage.css';
 
@@ -10,6 +11,7 @@ interface HomePageProps {
   photos: UnifiedPhotoData[];
   onUploadClick: () => void;
   onMapClick: () => void;
+  onPhotoDeleted?: (photoId: string) => void;
   pagination?: {
     hasMore: boolean;
     isLoadingMore: boolean;
@@ -17,12 +19,28 @@ interface HomePageProps {
   };
 }
 
-export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMapClick, pagination }) => {
+export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMapClick, onPhotoDeleted, pagination }) => {
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedPhotos, setSelectedPhotos] = useState<Set<string>>(new Set());
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handlePhotoClick = (index: number) => {
-    setSelectedPhotoIndex(index);
+    if (isSelectionMode) {
+      // 선택 모드에서는 사진 선택/해제
+      const photo = sortedPhotos[index];
+      const newSelected = new Set(selectedPhotos);
+      if (newSelected.has(photo.id)) {
+        newSelected.delete(photo.id);
+      } else {
+        newSelected.add(photo.id);
+      }
+      setSelectedPhotos(newSelected);
+    } else {
+      // 일반 모드에서는 모달 열기
+      setSelectedPhotoIndex(index);
+    }
   };
 
   const handleModalClose = () => {
@@ -43,6 +61,77 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
 
   const handleSortChange = (order: 'newest' | 'oldest') => {
     setSortOrder(order);
+  };
+
+  const handlePhotoDelete = async (photoId: string) => {
+    try {
+      await deleteSinglePhoto(photoId);
+      if (onPhotoDeleted) {
+        onPhotoDeleted(photoId);
+      }
+    } catch (error) {
+      console.error('사진 삭제 실패:', error);
+      throw error; // PhotoModal에서 에러 처리를 위해 재던짐
+    }
+  };
+
+  const handleSelectionModeToggle = () => {
+    setIsSelectionMode(!isSelectionMode);
+    setSelectedPhotos(new Set()); // 선택 모드 전환 시 선택 초기화
+  };
+
+  const handleSelectAll = () => {
+    if (selectedPhotos.size === sortedPhotos.length) {
+      // 모든 사진이 선택되어 있으면 전체 선택 해제
+      setSelectedPhotos(new Set());
+    } else {
+      // 전체 선택
+      const allPhotoIds = new Set(sortedPhotos.map(photo => photo.id));
+      setSelectedPhotos(allPhotoIds);
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedPhotos.size === 0) return;
+
+    const confirmed = window.confirm(
+      `선택한 ${selectedPhotos.size}장의 사진을 삭제하시겠습니까?\n⚠️ 삭제된 사진은 복구할 수 없습니다.`
+    );
+
+    if (!confirmed) return;
+
+    setIsDeleting(true);
+    try {
+      const photoIds = Array.from(selectedPhotos);
+      const results = await deleteMultiplePhotos(photoIds);
+
+      // 성공적으로 삭제된 사진들을 알림
+      const successfulDeletes = results.filter(result => result.success);
+
+      if (onPhotoDeleted && successfulDeletes.length > 0) {
+        successfulDeletes.forEach(result => {
+          onPhotoDeleted(result.photo_id);
+        });
+      }
+
+      // 삭제 완료 후 선택 모드 해제
+      setIsSelectionMode(false);
+      setSelectedPhotos(new Set());
+
+      // 결과 알림
+      if (successfulDeletes.length === photoIds.length) {
+        alert(`${successfulDeletes.length}장의 사진이 성공적으로 삭제되었습니다.`);
+      } else {
+        const failedCount = photoIds.length - successfulDeletes.length;
+        alert(`${successfulDeletes.length}장 삭제 성공, ${failedCount}장 삭제 실패`);
+      }
+
+    } catch (error) {
+      console.error('다중 사진 삭제 실패:', error);
+      alert('사진 삭제 중 오류가 발생했습니다.');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   // 실제 촬영시간 또는 업로드 시간을 가져오는 함수
@@ -271,29 +360,82 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
           <div className="photos-section">
             <div className="section-header">
               <div className="header-content">
-                <h2>포토로그 ({photos.length}장)</h2>
-                <div className="sort-controls">
-                  <button 
-                    className={`btn btn-sm ${sortOrder === 'newest' ? 'btn-primary' : 'btn-secondary'}`}
-                    onClick={() => handleSortChange('newest')}
-                  >
-                    🕒 최신순
-                  </button>
-                  <button 
-                    className={`btn btn-sm ${sortOrder === 'oldest' ? 'btn-primary' : 'btn-secondary'}`}
-                    onClick={() => handleSortChange('oldest')}
-                  >
-                    📅 오래된순
-                  </button>
+                <div className="header-left">
+                  <h2>포토로그 ({photos.length}장)</h2>
+                </div>
+
+                <div className="header-right">
+                  {!isSelectionMode ? (
+                    <>
+                      {/* 정렬 컨트롤 */}
+                      <div className="sort-controls">
+                        <button
+                          className={`btn btn-sm ${sortOrder === 'newest' ? 'btn-primary' : 'btn-secondary'}`}
+                          onClick={() => handleSortChange('newest')}
+                        >
+                          🕒 최신순
+                        </button>
+                        <button
+                          className={`btn btn-sm ${sortOrder === 'oldest' ? 'btn-primary' : 'btn-secondary'}`}
+                          onClick={() => handleSortChange('oldest')}
+                        >
+                          📅 오래된순
+                        </button>
+                      </div>
+
+                      {/* 구분선 */}
+                      <div className="divider"></div>
+
+                      {/* 관리 모드 */}
+                      <button
+                        className="btn btn-sm btn-outline"
+                        onClick={handleSelectionModeToggle}
+                        title="사진 선택하여 삭제하기"
+                      >
+                        ☑️ 선택
+                      </button>
+                    </>
+                  ) : (
+                    <div className="selection-controls">
+                      <span className="selection-count">
+                        {selectedPhotos.size}장 선택됨
+                      </span>
+                      <div className="selection-actions">
+                        <button
+                          className="btn btn-sm btn-secondary"
+                          onClick={handleSelectAll}
+                        >
+                          {selectedPhotos.size === sortedPhotos.length ? '전체 해제' : '전체 선택'}
+                        </button>
+                        {selectedPhotos.size > 0 && (
+                          <button
+                            className="btn btn-sm btn-danger"
+                            onClick={handleDeleteSelected}
+                            disabled={isDeleting}
+                          >
+                            {isDeleting ? '삭제 중...' : `${selectedPhotos.size}장 삭제`}
+                          </button>
+                        )}
+                        <button
+                          className="btn btn-sm btn-secondary"
+                          onClick={handleSelectionModeToggle}
+                        >
+                          완료
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
             
             <div className="photos-grid">
               {sortedPhotos.map((photo, index) => (
-                <div 
-                  key={index} 
-                  className="photo-card"
+                <div
+                  key={index}
+                  className={`photo-card ${isSelectionMode ? 'selection-mode' : ''} ${
+                    selectedPhotos.has(photo.id) ? 'selected' : ''
+                  }`}
                   onClick={() => handlePhotoClick(index)}
                 >
                   <div className="photo-image">
@@ -309,7 +451,13 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
                       loading="lazy"
                     />
                     <div className="photo-overlay">
-                      <span className="overlay-icon">🔍</span>
+                      {isSelectionMode ? (
+                        <div className="selection-checkbox">
+                          {selectedPhotos.has(photo.id) ? '✅' : '⬜'}
+                        </div>
+                      ) : (
+                        <span className="overlay-icon">🔍</span>
+                      )}
                     </div>
                   </div>
                   
@@ -371,15 +519,18 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
       </main>
 
       {/* 사진 상세 보기 모달 */}
-      <PhotoModal
-        photo={selectedPhotoIndex !== null ? sortedPhotos[selectedPhotoIndex] : null}
-        isOpen={selectedPhotoIndex !== null}
-        onClose={handleModalClose}
-        onPrevious={selectedPhotoIndex !== null && selectedPhotoIndex > 0 ? handlePreviousPhoto : undefined}
-        onNext={selectedPhotoIndex !== null && selectedPhotoIndex < sortedPhotos.length - 1 ? handleNextPhoto : undefined}
-        currentIndex={selectedPhotoIndex ?? undefined}
-        totalCount={sortedPhotos.length}
-      />
+      {!isSelectionMode && (
+        <PhotoModal
+          photo={selectedPhotoIndex !== null ? sortedPhotos[selectedPhotoIndex] : null}
+          isOpen={selectedPhotoIndex !== null}
+          onClose={handleModalClose}
+          onPrevious={selectedPhotoIndex !== null && selectedPhotoIndex > 0 ? handlePreviousPhoto : undefined}
+          onNext={selectedPhotoIndex !== null && selectedPhotoIndex < sortedPhotos.length - 1 ? handleNextPhoto : undefined}
+          currentIndex={selectedPhotoIndex ?? undefined}
+          totalCount={sortedPhotos.length}
+          onDelete={handlePhotoDelete}
+        />
+      )}
     </div>
   );
 };

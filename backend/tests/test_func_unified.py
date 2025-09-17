@@ -520,5 +520,102 @@ def get_photo_list_from_storage(service, limit: int) -> dict:
         return create_api_response(500, None, f"Object Storage 조회 실패: {str(e)}")
 
 
+def delete_photo(photo_id: str) -> dict:
+    """
+    사진 삭제 API 함수
+    NoSQL 메타데이터와 Object Storage의 파일들(원본 + 썸네일)을 모두 삭제
+
+    Args:
+        photo_id: 삭제할 사진의 ID
+
+    Returns:
+        dict: 삭제 성공/실패 결과
+    """
+    try:
+        print(f"🗑️ 사진 삭제 시작: {photo_id}")
+        storage_type = os.getenv('STORAGE_TYPE', 'OCI')
+        service = UnifiedStorageService(storage_type)
+
+        # 1. NoSQL에서 사진 메타데이터 조회 (삭제 전에 썸네일 정보 확인용)
+        photo_metadata = None
+        if hasattr(service, 'nosql_client') and service.nosql_client:
+            try:
+                photo_metadata = service.nosql_client.get_photo_metadata(photo_id)
+                if not photo_metadata:
+                    return {
+                        'success': False,
+                        'message': f'사진을 찾을 수 없습니다: {photo_id}'
+                    }
+                print(f"📋 사진 메타데이터 확인: {photo_metadata.get('filename', '')}")
+            except Exception as e:
+                print(f"⚠️ 메타데이터 조회 실패: {e}")
+
+        # 2. Object Storage에서 파일 삭제
+        deletion_results = []
+
+        # 원본 사진 삭제
+        original_key = f"photos/{photo_id}.jpg"
+        try:
+            delete_result = service.storage_client.delete_file(original_key)
+            if delete_result.get('success', False):
+                print(f"✅ 원본 사진 삭제 성공: {original_key}")
+                deletion_results.append(f"원본: {original_key}")
+            else:
+                print(f"⚠️ 원본 사진 삭제 실패: {delete_result.get('error', 'Unknown error')}")
+        except Exception as e:
+            print(f"❌ 원본 사진 삭제 중 오류: {e}")
+
+        # 썸네일들 삭제
+        thumbnail_sizes = ['small', 'medium', 'large']
+        for size in thumbnail_sizes:
+            thumbnail_key = f"thumbnails/{photo_id}_{size}.jpg"
+            try:
+                delete_result = service.storage_client.delete_file(thumbnail_key)
+                if delete_result.get('success', False):
+                    print(f"✅ 썸네일 삭제 성공: {thumbnail_key}")
+                    deletion_results.append(f"썸네일 {size}: {thumbnail_key}")
+                else:
+                    print(f"⚠️ 썸네일 삭제 실패 (무시): {thumbnail_key}")
+            except Exception as e:
+                print(f"⚠️ 썸네일 삭제 중 오류 (무시): {thumbnail_key} - {e}")
+
+        # 3. NoSQL에서 메타데이터 삭제
+        if hasattr(service, 'nosql_client') and service.nosql_client:
+            try:
+                nosql_delete_result = service.nosql_client.delete_photo_metadata(photo_id)
+                if nosql_delete_result.get('success', False):
+                    print(f"✅ NoSQL 메타데이터 삭제 성공: {photo_id}")
+                    deletion_results.append(f"메타데이터: NoSQL")
+                else:
+                    print(f"❌ NoSQL 메타데이터 삭제 실패: {nosql_delete_result.get('error', 'Unknown error')}")
+                    return {
+                        'success': False,
+                        'message': f'메타데이터 삭제 실패: {nosql_delete_result.get("error", "Unknown error")}'
+                    }
+            except Exception as e:
+                print(f"❌ NoSQL 삭제 중 오류: {e}")
+                return {
+                    'success': False,
+                    'message': f'메타데이터 삭제 중 오류: {str(e)}'
+                }
+
+        print(f"🎉 사진 삭제 완료: {photo_id}")
+        print(f"   삭제된 항목들: {', '.join(deletion_results)}")
+
+        return {
+            'success': True,
+            'message': f'사진이 성공적으로 삭제되었습니다',
+            'photo_id': photo_id,
+            'deleted_items': deletion_results
+        }
+
+    except Exception as e:
+        print(f"❌ 사진 삭제 중 예상치 못한 오류: {str(e)}")
+        return {
+            'success': False,
+            'message': f'삭제 중 오류가 발생했습니다: {str(e)}'
+        }
+
+
 if __name__ == "__main__":
     main_test()

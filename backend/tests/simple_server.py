@@ -37,7 +37,7 @@ class PhotoAPIHandler(BaseHTTPRequestHandler):
                 "success": True,
                 "message": "Server is running",
                 "version": "1.0.0",
-                "endpoints": ["/api/health", "/api/photos/upload", "/api/photos/upload-unified", "/api/photos", "/storage/*"]
+                "endpoints": ["/api/health", "/api/photos/upload", "/api/photos/upload-unified", "/api/photos", "/api/photos/{id}", "/storage/*"]
             }
             self.send_json_response(200, response_data)
         elif parsed_path.path == '/api/photos':
@@ -138,6 +138,47 @@ class PhotoAPIHandler(BaseHTTPRequestHandler):
                 }
                 self.send_json_response(500, error_response)
 
+        else:
+            self.send_error(404, "Not Found")
+
+    def do_DELETE(self):
+        """DELETE 요청 처리"""
+        parsed_path = urlparse(self.path)
+
+        # /api/photos/{photo_id} 패턴 확인
+        path_parts = parsed_path.path.strip('/').split('/')
+        if len(path_parts) == 3 and path_parts[0] == 'api' and path_parts[1] == 'photos':
+            photo_id = path_parts[2]
+
+            try:
+                print(f"🗑️ 사진 삭제 요청: {photo_id}")
+
+                # 삭제 함수 호출
+                from test_func_unified import delete_photo
+                result = delete_photo(photo_id)
+
+                if result.get('success', False):
+                    print(f"✅ 사진 삭제 성공: {photo_id}")
+                    self.send_json_response(200, {
+                        "success": True,
+                        "message": "사진이 성공적으로 삭제되었습니다",
+                        "photo_id": photo_id
+                    })
+                else:
+                    print(f"❌ 사진 삭제 실패: {result.get('message', 'Unknown error')}")
+                    self.send_json_response(404, {
+                        "success": False,
+                        "message": result.get('message', '사진을 찾을 수 없습니다'),
+                        "photo_id": photo_id
+                    })
+
+            except Exception as e:
+                print(f"❌ 사진 삭제 중 오류: {str(e)}")
+                self.send_json_response(500, {
+                    "success": False,
+                    "message": f"삭제 중 오류가 발생했습니다: {str(e)}",
+                    "photo_id": photo_id
+                })
         else:
             self.send_error(404, "Not Found")
 

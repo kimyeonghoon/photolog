@@ -318,6 +318,11 @@ function App() {
     setCurrentPage('map')
   }
 
+  const handlePhotoDeleted = (photoId: string) => {
+    // 삭제된 사진을 상태에서 제거
+    setUploadedPhotos(prev => prev.filter(photo => photo.id !== photoId))
+  }
+
 
   return (
     <ThemeProvider>
@@ -338,6 +343,7 @@ function App() {
             photos={uploadedPhotos}
             onUploadClick={handleUploadClick}
             onMapClick={handleMapClick}
+            onPhotoDeleted={handlePhotoDeleted}
             pagination={{
               hasMore: pagination.hasMore,
               isLoadingMore: pagination.isLoadingMore,
