@@ -72,26 +72,14 @@ export const UploadPage: React.FC<UploadPageProps> = ({
 }) => {
   // FileUploadData를 PhotoUploadData 형식으로 변환하는 함수
   const handleMultiUpload = (files: FileUploadData[]) => {
-    console.log(`🔄 UploadPage 변환 시작 - 받은 파일들:`, files.map(f => ({
-      filename: f.file.name,
-      hasStandardThumbnails: !!f.standardThumbnails,
-      thumbnailKeys: f.standardThumbnails ? Object.keys(f.standardThumbnails) : []
-    })));
-
     const convertedFiles: PhotoUploadData[] = files.map(file => ({
       file: file.file,
       description: file.description,
       location: file.location,
       thumbnail: file.thumbnail,
-      standardThumbnails: file.standardThumbnails, // 중요: standardThumbnails 추가!
-      exifData: file.exifData // EXIF 데이터 포함
+      standardThumbnails: file.standardThumbnails,
+      exifData: file.exifData
     }));
-
-    console.log(`✅ UploadPage 변환 완료 - 변환된 파일들:`, convertedFiles.map(f => ({
-      filename: f.file.name,
-      hasStandardThumbnails: !!f.standardThumbnails,
-      thumbnailKeys: f.standardThumbnails ? Object.keys(f.standardThumbnails) : []
-    })));
 
     onUpload(convertedFiles);
   };

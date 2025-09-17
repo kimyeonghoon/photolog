@@ -85,19 +85,21 @@ export const MultiPhotoUpload: React.FC<MultiPhotoUploadProps> = ({ onUpload, on
   // EXIF 데이터 추출
   const extractExifData = useCallback(async (file: File, travelDate?: string): Promise<ExifData | null> => {
     try {
-      console.log('EXIF 추출 시작:', file.name);
-      
       // 더 광범위한 EXIF 데이터 추출 시도
       const exif = await exifr.parse(file, {
         // pick 옵션을 제거하여 모든 EXIF 데이터를 추출
         translateKeys: true,
         mergeOutput: true
       });
-      
-      console.log('추출된 전체 EXIF 데이터:', exif);
-      
+
       if (!exif) {
-        console.log('EXIF 데이터 없음');
+        // EXIF가 없어도 여행날짜가 있으면 사용
+        if (travelDate) {
+          const travelDateTime = new Date(travelDate + 'T12:00:00');
+          return {
+            timestamp: travelDateTime.toISOString()
+          };
+        }
         return null;
       }
 
@@ -108,21 +110,11 @@ export const MultiPhotoUpload: React.FC<MultiPhotoUploadProps> = ({ onUpload, on
       let lat: number | undefined;
       let lng: number | undefined;
       
-      console.log('GPS 관련 필드 확인:', {
-        latitude: exif.latitude,
-        longitude: exif.longitude,
-        GPSLatitude: exif.GPSLatitude,
-        GPSLongitude: exif.GPSLongitude,
-        GPSLatitudeRef: exif.GPSLatitudeRef,
-        GPSLongitudeRef: exif.GPSLongitudeRef,
-        gpsKeys: Object.keys(exif).filter(key => key.toLowerCase().includes('gps'))
-      });
       
       // 방법 1: 자동 변환된 좌표
       if (exif.latitude && exif.longitude) {
         lat = exif.latitude;
         lng = exif.longitude;
-        console.log('GPS 방법 1 성공 (자동 변환):', { lat, lng });
       }
       // 방법 2: 직접 GPS 태그에서 추출
       else if (exif.GPSLatitude && exif.GPSLongitude) {
@@ -132,7 +124,6 @@ export const MultiPhotoUpload: React.FC<MultiPhotoUploadProps> = ({ onUpload, on
         // GPS 참조 방향 확인
         if (exif.GPSLatitudeRef === 'S' && lat) lat = -lat;
         if (exif.GPSLongitudeRef === 'W' && lng) lng = -lng;
-        console.log('GPS 방법 2 성공 (직접 태그):', { lat, lng, latRef: exif.GPSLatitudeRef, lngRef: exif.GPSLongitudeRef });
       }
       // 방법 3: 숫자 태그로 시도
       else if (exif[2] && exif[4]) {
@@ -140,24 +131,14 @@ export const MultiPhotoUpload: React.FC<MultiPhotoUploadProps> = ({ onUpload, on
         lng = exif[4];
         if (exif[1] === 'S' && lat) lat = -lat;
         if (exif[3] === 'W' && lng) lng = -lng;
-        console.log('GPS 방법 3 성공 (숫자 태그):', { lat, lng });
       }
       
       if (lat && lng && !isNaN(lat) && !isNaN(lng)) {
         exifData.latitude = lat;
         exifData.longitude = lng;
-        console.log('GPS 정보 최종 저장:', { latitude: lat, longitude: lng });
-      } else {
-        console.log('GPS 정보 없음 또는 추출 실패');
       }
 
       // 촬영 시간 - 문자열과 Date 객체 모두 처리
-      console.log('시간 관련 필드 확인:', {
-        DateTimeOriginal: exif.DateTimeOriginal,
-        DateTime: exif.DateTime,
-        CreateDate: exif.CreateDate,
-        DateTimeDigitized: exif.DateTimeDigitized
-      });
 
       // EXIF 날짜 문자열을 Date 객체로 변환하는 함수
       const parseExifDate = (dateValue: any): string | null => {
@@ -197,53 +178,41 @@ export const MultiPhotoUpload: React.FC<MultiPhotoUploadProps> = ({ onUpload, on
       let timestamp = null;
       if (exif.DateTimeOriginal) {
         timestamp = parseExifDate(exif.DateTimeOriginal);
-        if (timestamp) console.log('촬영시간 저장 (DateTimeOriginal):', timestamp);
       }
 
       if (!timestamp && exif.DateTime) {
         timestamp = parseExifDate(exif.DateTime);
-        if (timestamp) console.log('촬영시간 저장 (DateTime):', timestamp);
       }
 
       if (!timestamp && exif.CreateDate) {
         timestamp = parseExifDate(exif.CreateDate);
-        if (timestamp) console.log('촬영시간 저장 (CreateDate):', timestamp);
       }
 
       if (!timestamp && exif.DateTimeDigitized) {
         timestamp = parseExifDate(exif.DateTimeDigitized);
-        if (timestamp) console.log('촬영시간 저장 (DateTimeDigitized):', timestamp);
       }
 
       if (timestamp) {
         exifData.timestamp = timestamp;
-        console.log('EXIF 촬영시간 사용:', timestamp);
       } else if (travelDate) {
         // EXIF 촬영시간이 없으면 사용자 입력 여행날짜 사용
         const travelDateTime = new Date(travelDate + 'T12:00:00'); // 정오로 설정
         exifData.timestamp = travelDateTime.toISOString();
-        console.log('여행날짜 사용:', exifData.timestamp);
-      } else {
-        console.log('촬영시간 정보 없음 또는 파싱 실패');
       }
 
       // 카메라 정보 - 숫자 태그와 문자열 키 모두 확인
       const make = exif.Make || exif[271];
       const model = exif.Model || exif[272];
-      console.log('카메라 정보:', { Make: exif.Make, Model: exif.Model, make, model });
       
       if (make || model) {
         exifData.camera = [make, model].filter(Boolean).join(' ');
-        console.log('카메라 정보 저장:', exifData.camera);
       }
 
       // 렌즈 정보
       if (exif.LensModel) {
         exifData.lens = exif.LensModel;
-        console.log('렌즈 정보 저장:', exifData.lens);
       }
 
-      console.log('최종 exifData:', exifData);
       return exifData;
     } catch (error) {
       console.warn('EXIF 데이터 추출 실패:', error);
@@ -267,31 +236,20 @@ export const MultiPhotoUpload: React.FC<MultiPhotoUploadProps> = ({ onUpload, on
         quality: 0.8
       });
     } catch (error) {
-      console.warn('미리보기 썸네일 생성 실패:', error);
       return null;
     }
   }, []);
 
   // 서버 전송용 표준 썸네일들 생성
   const generateStandardThumbnails = useCallback(async (file: File): Promise<{ [key: string]: ThumbnailResult } | null> => {
-    console.log(`🔍 썸네일 생성 가능 여부 확인: ${file.name}`, {
-      type: file.type,
-      size: file.size,
-      name: file.name
-    });
-
     const canCreate = canCreateThumbnail(file);
-    console.log(`✅ 썸네일 생성 가능 여부:`, canCreate);
 
     if (!canCreate.canCreate) {
-      console.warn(`❌ 표준 썸네일 생성 불가: ${canCreate.reason}`);
       return null;
     }
 
     try {
-      console.log(`🚀 createStandardThumbnails 호출 중...`);
       const result = await createStandardThumbnails(file);
-      console.log(`✅ createStandardThumbnails 완료:`, result);
       return result;
     } catch (error) {
       console.error('❌ 표준 썸네일 생성 실패:', error);
@@ -336,23 +294,7 @@ export const MultiPhotoUpload: React.FC<MultiPhotoUploadProps> = ({ onUpload, on
       }));
 
       // 서버 전송용 표준 썸네일들 생성
-      console.log(`🖼️ 표준 썸네일 생성 시작: ${fileData.file.name}`);
       const standardThumbnails = await generateStandardThumbnails(fileData.file);
-      console.log(`📊 표준 썸네일 생성 결과:`, {
-        filename: fileData.file.name,
-        success: !!standardThumbnails,
-        thumbnailCount: standardThumbnails ? Object.keys(standardThumbnails).length : 0,
-        thumbnailSizes: standardThumbnails ? Object.keys(standardThumbnails) : []
-      });
-
-      // 완료 상태로 변경
-      console.log(`🔄 상태 업데이트 전 - standardThumbnails:`, {
-        fileId: fileData.id,
-        filename: fileData.file.name,
-        hasStandardThumbnails: !!standardThumbnails,
-        thumbnailKeys: standardThumbnails ? Object.keys(standardThumbnails) : [],
-        standardThumbnails
-      });
 
       setState(prev => ({
         ...prev,
@@ -373,7 +315,6 @@ export const MultiPhotoUpload: React.FC<MultiPhotoUploadProps> = ({ onUpload, on
 
 
     } catch (error) {
-      console.error('파일 처리 실패:', error);
       setState(prev => ({
         ...prev,
         files: prev.files.map(f =>
@@ -383,7 +324,7 @@ export const MultiPhotoUpload: React.FC<MultiPhotoUploadProps> = ({ onUpload, on
         )
       }));
     }
-  }, [extractExifData, generatePreviewThumbnail, generateStandardThumbnails]);
+  }, [extractExifData, generatePreviewThumbnail, generateStandardThumbnails, state.travelDate]);
 
   // 파일 추가 (즉시 미리보기 생성)
   const addFiles = useCallback((files: File[]) => {
@@ -506,20 +447,9 @@ export const MultiPhotoUpload: React.FC<MultiPhotoUploadProps> = ({ onUpload, on
     const completedFiles = state.files.filter(f => f.status === 'completed');
 
     if (completedFiles.length > 0) {
-      console.log(`📤 업로드 완료된 파일들:`, completedFiles);
-
       // 설명 조합 로직: 개별 설명이 있으면 "전체설명 - 개별설명", 없으면 "전체설명"
       const filesWithDescriptions = completedFiles.map(file => {
         const individualDesc = file.description?.trim();
-
-        // 디버깅: 원본 파일 데이터 확인
-        console.log(`🔍 원본 파일 데이터 (${file.file.name}):`, {
-          hasStandardThumbnails: !!file.standardThumbnails,
-          standardThumbnailsType: typeof file.standardThumbnails,
-          thumbnailSizes: file.standardThumbnails ? Object.keys(file.standardThumbnails) : [],
-          allKeys: Object.keys(file),
-          standardThumbnails: file.standardThumbnails
-        });
 
         const result = {
           ...file,
@@ -528,26 +458,9 @@ export const MultiPhotoUpload: React.FC<MultiPhotoUploadProps> = ({ onUpload, on
             : state.globalDescription
         };
 
-        console.log(`📦 스프레드 후 결과 데이터 (${file.file.name}):`, {
-          hasStandardThumbnails: !!result.standardThumbnails,
-          thumbnailSizes: result.standardThumbnails ? Object.keys(result.standardThumbnails) : [],
-          standardThumbnails: result.standardThumbnails
-        });
-
         return result;
       });
 
-      // 최종 검증: onUpload 호출 직전 데이터 확인
-      filesWithDescriptions.forEach((file, index) => {
-        console.log(`🔍 최종 검증 ${index + 1} (${file.file.name}):`, {
-          hasStandardThumbnails: !!file.standardThumbnails,
-          thumbnailKeys: file.standardThumbnails ? Object.keys(file.standardThumbnails) : [],
-          allKeys: Object.keys(file),
-          standardThumbnails: file.standardThumbnails
-        });
-      });
-
-      console.log(`🚀 onUpload 호출 - 전달할 데이터:`, filesWithDescriptions);
       onUpload(filesWithDescriptions);
 
       // URL 정리 후 초기화
@@ -672,7 +585,9 @@ export const MultiPhotoUpload: React.FC<MultiPhotoUploadProps> = ({ onUpload, on
           id="travelDate"
           type="date"
           value={state.travelDate}
-          onChange={(e) => setState(prev => ({ ...prev, travelDate: e.target.value }))}
+          onChange={(e) => {
+            setState(prev => ({ ...prev, travelDate: e.target.value }));
+          }}
           placeholder="EXIF 촬영시간이 없는 사진에 적용됩니다"
         />
         <div className="field-description">

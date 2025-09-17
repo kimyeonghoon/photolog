@@ -357,11 +357,8 @@ export class PhotoAPIClient {
   ): Promise<APIPhotoUploadResponse[]> {
     // 통합 스토리지 서비스 사용 여부에 따라 분기
     if (USE_UNIFIED_STORAGE) {
-      console.log('🚀 통합 스토리지 서비스 사용');
       return this.uploadMultiplePhotosUnified(files, onProgress);
     }
-
-    console.log('📤 기존 개별 업로드 방식 사용');
     const results: APIPhotoUploadResponse[] = [];
     const total = files.length;
 
