@@ -3,7 +3,7 @@ import { PhotoModal } from '../components/PhotoModal';
 import { StatsChart } from '../components/StatsChart';
 import { LocationDisplay } from '../components/LocationDisplay';
 import { PageHeader } from '../components/PageHeader';
-import { deleteSinglePhoto, deleteMultiplePhotos } from '../services/photoAPI';
+import { deleteSinglePhoto, deleteMultiplePhotos, updatePhoto } from '../services/photoAPI';
 import type { UnifiedPhotoData } from '../types';
 import './HomePage.css';
 
@@ -12,6 +12,7 @@ interface HomePageProps {
   onUploadClick: () => void;
   onMapClick: () => void;
   onPhotoDeleted?: (photoId: string) => void;
+  onPhotoUpdated?: (photoId: string, updates: { description?: string; timestamp?: string }) => void;
   pagination?: {
     hasMore: boolean;
     isLoadingMore: boolean;
@@ -19,7 +20,7 @@ interface HomePageProps {
   };
 }
 
-export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMapClick, onPhotoDeleted, pagination }) => {
+export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMapClick, onPhotoDeleted, onPhotoUpdated, pagination }) => {
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -71,6 +72,18 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
       }
     } catch (error) {
       console.error('사진 삭제 실패:', error);
+      throw error; // PhotoModal에서 에러 처리를 위해 재던짐
+    }
+  };
+
+  const handlePhotoUpdate = async (photoId: string, updates: { description?: string; timestamp?: string }) => {
+    try {
+      await updatePhoto(photoId, updates);
+      if (onPhotoUpdated) {
+        onPhotoUpdated(photoId, updates);
+      }
+    } catch (error) {
+      console.error('사진 업데이트 실패:', error);
       throw error; // PhotoModal에서 에러 처리를 위해 재던짐
     }
   };
@@ -529,6 +542,7 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
           currentIndex={selectedPhotoIndex ?? undefined}
           totalCount={sortedPhotos.length}
           onDelete={handlePhotoDelete}
+          onUpdatePhoto={handlePhotoUpdate}
         />
       )}
     </div>

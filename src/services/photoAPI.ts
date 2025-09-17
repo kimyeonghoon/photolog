@@ -466,6 +466,46 @@ export class PhotoAPIClient {
 
     return results;
   }
+
+  // 사진 정보 업데이트
+  async updatePhoto(photoId: string, updates: {
+    description?: string;
+    timestamp?: string;
+  }): Promise<{
+    success: boolean;
+    message: string;
+    data?: any;
+  }> {
+    try {
+      const response = await fetch(`${this.baseURL}/api/photos/${photoId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updates)
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        return {
+          success: false,
+          message: result.message || '사진 업데이트 실패'
+        };
+      }
+
+      return {
+        success: true,
+        message: '사진 정보가 성공적으로 업데이트되었습니다.',
+        data: result.data
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : '사진 업데이트 중 오류 발생'
+      };
+    }
+  }
 }
 
 // 기본 인스턴스 생성
@@ -522,4 +562,16 @@ export const deleteMultiplePhotos = async (photoIds: string[]): Promise<Array<{
   message: string;
 }>> => {
   return photoAPI.deleteMultiplePhotos(photoIds);
+};
+
+// 사진 정보 업데이트
+export const updatePhoto = async (photoId: string, updates: {
+  description?: string;
+  timestamp?: string;
+}): Promise<{
+  success: boolean;
+  message: string;
+  data?: any;
+}> => {
+  return photoAPI.updatePhoto(photoId, updates);
 };

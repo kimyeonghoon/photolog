@@ -514,6 +514,150 @@
   }
 }
 
+/* 편집 모드 스타일 */
+.modal-edit-button,
+.modal-save-button,
+.modal-cancel-button {
+  background: transparent;
+  border: 2px solid #007bff;
+  color: #007bff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  height: 44px;
+}
+
+.modal-edit-button:hover:not(:disabled),
+.modal-save-button:hover:not(:disabled) {
+  background: #007bff;
+  color: white;
+  transform: translateY(-1px);
+}
+
+.modal-cancel-button {
+  border-color: #6c757d;
+  color: #6c757d;
+}
+
+.modal-cancel-button:hover:not(:disabled) {
+  background: #6c757d;
+  color: white;
+  transform: translateY(-1px);
+}
+
+.modal-edit-button:disabled,
+.modal-save-button:disabled,
+.modal-cancel-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.info-edit-textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 8px 12px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  line-height: 1.4;
+  resize: vertical;
+  transition: border-color 0.3s ease;
+}
+
+.info-edit-textarea:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.info-edit-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.3s ease;
+}
+
+.info-edit-input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.info-edit-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.edit-hint {
+  font-size: 11px;
+  color: #28a745;
+  font-style: italic;
+}
+
+.exif-hint {
+  font-size: 11px;
+  color: #6c757d;
+  font-style: italic;
+}
+
+/* 다크 모드에서 편집 요소 스타일 */
+@media (prefers-color-scheme: dark) {
+  .modal-edit-button,
+  .modal-save-button {
+    border-color: #4dabf7;
+    color: #4dabf7;
+  }
+
+  .modal-edit-button:hover:not(:disabled),
+  .modal-save-button:hover:not(:disabled) {
+    background: #4dabf7;
+    color: #000;
+  }
+
+  .modal-cancel-button {
+    border-color: #adb5bd;
+    color: #adb5bd;
+  }
+
+  .modal-cancel-button:hover:not(:disabled) {
+    background: #adb5bd;
+    color: #000;
+  }
+
+  .info-edit-textarea,
+  .info-edit-input {
+    background: #404040;
+    border-color: #6c757d;
+    color: #ffffff;
+  }
+
+  .info-edit-textarea:focus,
+  .info-edit-input:focus {
+    border-color: #4dabf7;
+    box-shadow: 0 0 0 3px rgba(77, 171, 247, 0.1);
+  }
+
+  .edit-hint {
+    color: #20c997;
+  }
+
+  .exif-hint {
+    color: #adb5bd;
+  }
+}
+
 /* 모바일 반응형 */
 @media (max-width: 768px) {
   .delete-confirm-dialog {
@@ -533,5 +677,24 @@
   .delete-confirm-actions .btn {
     flex: 1;
     padding: 12px;
+  }
+
+  .modal-actions {
+    gap: 6px;
+  }
+
+  .modal-edit-button,
+  .modal-save-button,
+  .modal-cancel-button,
+  .modal-delete-button {
+    min-width: 36px;
+    height: 36px;
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+
+  .info-edit-textarea,
+  .info-edit-input {
+    font-size: 16px; /* iOS에서 줌 방지 */
   }
 }

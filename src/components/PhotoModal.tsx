@@ -12,6 +12,7 @@ interface PhotoModalProps {
   currentIndex?: number;
   totalCount?: number;
   onDelete?: (photoId: string) => void;
+  onUpdatePhoto?: (photoId: string, updates: { description?: string; timestamp?: string }) => Promise<void>;
 }
 
 export const PhotoModal: React.FC<PhotoModalProps> = ({
@@ -22,19 +23,34 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
   onNext,
   currentIndex,
   totalCount,
-  onDelete
+  onDelete,
+  onUpdatePhoto
 }) => {
   const [originalImageUrl, setOriginalImageUrl] = useState<string | null>(null);
   const [isImageLoading, setIsImageLoading] = useState(false);
   const [, setImageLoadError] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedDescription, setEditedDescription] = useState('');
+  const [editedDate, setEditedDate] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
-  // 모달이 열릴 때 원본 이미지 URL 로드
+  // 모달이 열릴 때 원본 이미지 URL 로드 및 편집 데이터 초기화
   useEffect(() => {
     if (isOpen && photo) {
       setIsImageLoading(true);
       setImageLoadError(false);
+
+      // 편집 데이터 초기화
+      setEditedDescription(photo.description || '');
+      if (photo.exifData?.timestamp) {
+        const date = new Date(photo.exifData.timestamp);
+        setEditedDate(date.toISOString().split('T')[0]);
+      } else {
+        setEditedDate('');
+      }
+      setIsEditing(false);
 
       // 원본 이미지 URL 결정
       const originalUrl = photo.file_url ||
@@ -68,6 +84,9 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
       setOriginalImageUrl(null);
       setIsImageLoading(false);
       setImageLoadError(false);
+      setIsEditing(false);
+      setEditedDescription('');
+      setEditedDate('');
     }
   }, [isOpen, photo]);
 
@@ -155,7 +174,57 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
   const handleDeleteCancel = () => {
     setShowDeleteConfirm(false);
   };
-  
+
+  // 편집 모드 토글
+  const handleEditToggle = () => {
+    if (isEditing) {
+      // 편집 취소 시 원래 값으로 복원
+      setEditedDescription(photo?.description || '');
+      if (photo?.exifData?.timestamp) {
+        const date = new Date(photo.exifData.timestamp);
+        setEditedDate(date.toISOString().split('T')[0]);
+      } else {
+        setEditedDate('');
+      }
+    }
+    setIsEditing(!isEditing);
+  };
+
+  // 변경사항 저장
+  const handleSaveChanges = async () => {
+    if (!photo || !onUpdatePhoto) return;
+
+    setIsSaving(true);
+    try {
+      const updates: { description?: string; timestamp?: string } = {};
+
+      // 설명 변경사항
+      if (editedDescription !== photo.description) {
+        updates.description = editedDescription;
+      }
+
+      // 날짜 변경사항 (EXIF 촬영시간이 없는 경우에만)
+      if (!photo.exifData?.timestamp && editedDate) {
+        const dateTime = new Date(editedDate + 'T12:00:00');
+        updates.timestamp = dateTime.toISOString();
+      } else if (!photo.exifData?.timestamp && !editedDate) {
+        updates.timestamp = '';
+      }
+
+      if (Object.keys(updates).length > 0) {
+        await onUpdatePhoto(photo.id, updates);
+      }
+
+      setIsEditing(false);
+    } catch (error) {
+      console.error('사진 정보 업데이트 실패:', error);
+      // 에러 시 사용자에게 알림
+      alert('사진 정보 업데이트에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
 
   return (
     <div className="photo-modal-overlay" onClick={onClose}>
@@ -168,7 +237,39 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
             )}
           </div>
           <div className="modal-actions">
-            {onDelete && (
+            {onUpdatePhoto && !isEditing && (
+              <button
+                className="modal-edit-button"
+                onClick={handleEditToggle}
+                aria-label="사진 정보 수정"
+                title="사진 정보 수정"
+              >
+                ✏️
+              </button>
+            )}
+            {isEditing && (
+              <>
+                <button
+                  className="modal-save-button"
+                  onClick={handleSaveChanges}
+                  disabled={isSaving}
+                  aria-label="변경사항 저장"
+                  title="변경사항 저장"
+                >
+                  {isSaving ? '⏳' : '💾'}
+                </button>
+                <button
+                  className="modal-cancel-button"
+                  onClick={handleEditToggle}
+                  disabled={isSaving}
+                  aria-label="편집 취소"
+                  title="편집 취소"
+                >
+                  ❌
+                </button>
+              </>
+            )}
+            {onDelete && !isEditing && (
               <button
                 className="modal-delete-button"
                 onClick={handleDeleteClick}
@@ -183,6 +284,7 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
               className="modal-close-button"
               onClick={onClose}
               aria-label="모달 닫기"
+              disabled={isEditing && isSaving}
             >
               ✕
             </button>
@@ -247,22 +349,45 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
             <div className="photo-info-section">
               <h3>사진 정보</h3>
               
-              {photo.description && (
-                <div className="info-item">
-                  <span className="info-label">📝 설명:</span>
-                  <span className="info-value">{photo.description}</span>
-                </div>
-              )}
+              <div className="info-item">
+                <span className="info-label">📝 설명:</span>
+                {isEditing ? (
+                  <textarea
+                    className="info-edit-textarea"
+                    value={editedDescription}
+                    onChange={(e) => setEditedDescription(e.target.value)}
+                    placeholder="사진 설명을 입력하세요..."
+                    rows={3}
+                    disabled={isSaving}
+                  />
+                ) : (
+                  <span className="info-value">{photo.description || '설명 없음'}</span>
+                )}
+              </div>
               
               <div className="info-item">
-                <span className="info-label">📅 {isExifTime ? '촬영 날짜' : '업로드 날짜'}:</span>
-                <span className="info-value">
-                  {typeof dateTime === 'string' ? dateTime : `${dateTime.date} ${isExifTime ? '(EXIF)' : ''}`}
-                </span>
+                <span className="info-label">📅 {isExifTime ? '촬영 날짜' : '날짜'}:</span>
+                {isEditing && !isExifTime ? (
+                  <div className="info-edit-container">
+                    <input
+                      type="date"
+                      className="info-edit-input"
+                      value={editedDate}
+                      onChange={(e) => setEditedDate(e.target.value)}
+                      disabled={isSaving}
+                    />
+                    <small className="edit-hint">EXIF 촬영시간이 없어서 수정 가능합니다</small>
+                  </div>
+                ) : (
+                  <span className="info-value">
+                    {typeof dateTime === 'string' ? dateTime : `${dateTime.date} ${isExifTime ? '(EXIF)' : ''}`}
+                    {isExifTime && <small className="exif-hint"> - EXIF 데이터로 수정 불가</small>}
+                  </span>
+                )}
               </div>
 
               <div className="info-item">
-                <span className="info-label">⏰ {isExifTime ? '촬영 시간' : '업로드 시간'}:</span>
+                <span className="info-label">⏰ {isExifTime ? '촬영 시간' : '시간'}:</span>
                 <span className="info-value">
                   {typeof dateTime === 'string' ? '' : `${dateTime.time} ${isExifTime ? '(EXIF)' : ''}`}
                 </span>

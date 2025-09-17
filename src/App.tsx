@@ -264,6 +264,32 @@ function App() {
     setUploadedPhotos(prev => prev.filter(photo => photo.id !== photoId))
   }
 
+  const handlePhotoUpdated = (photoId: string, updates: { description?: string; timestamp?: string }) => {
+    // 업데이트된 사진 정보를 상태에 반영
+    setUploadedPhotos(prev => prev.map(photo => {
+      if (photo.id === photoId) {
+        const updatedPhoto = { ...photo };
+
+        // 설명 업데이트
+        if (updates.description !== undefined) {
+          updatedPhoto.description = updates.description;
+        }
+
+        // 시간 업데이트 (EXIF 데이터가 없는 경우에만)
+        if (updates.timestamp !== undefined && !photo.exifData?.timestamp) {
+          if (updatedPhoto.exifData) {
+            updatedPhoto.exifData.timestamp = updates.timestamp;
+          } else {
+            updatedPhoto.exifData = { timestamp: updates.timestamp };
+          }
+        }
+
+        return updatedPhoto;
+      }
+      return photo;
+    }));
+  }
+
 
   return (
     <ThemeProvider>
@@ -285,6 +311,7 @@ function App() {
             onUploadClick={handleUploadClick}
             onMapClick={handleMapClick}
             onPhotoDeleted={handlePhotoDeleted}
+            onPhotoUpdated={handlePhotoUpdated}
             pagination={{
               hasMore: pagination.hasMore,
               isLoadingMore: pagination.isLoadingMore,
