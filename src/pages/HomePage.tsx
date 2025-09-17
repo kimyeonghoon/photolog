@@ -10,9 +10,14 @@ interface HomePageProps {
   photos: UnifiedPhotoData[];
   onUploadClick: () => void;
   onMapClick: () => void;
+  pagination?: {
+    hasMore: boolean;
+    isLoadingMore: boolean;
+    onLoadMore: () => void;
+  };
 }
 
-export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMapClick }) => {
+export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMapClick, pagination }) => {
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
 
@@ -84,8 +89,11 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
       getPhotoTime(photo) < getPhotoTime(earliest) ? photo : earliest
     );
 
-    // 총 파일 크기
-    const totalSize = photos.reduce((sum, photo) => sum + (photo.file?.size || photo.file_size || 0), 0);
+    // 총 파일 크기 (서버 데이터는 file_size 사용, 로컬 데이터는 file.size 사용)
+    const totalSize = photos.reduce((sum, photo) => {
+      const fileSize = photo.file_size || photo.serverData?.fileSize || photo.file?.size || 0;
+      return sum + fileSize;
+    }, 0);
 
     // 이번 달 업로드 수
     const thisMonth = new Date();
@@ -335,6 +343,29 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
                 </div>
               ))}
             </div>
+
+            {/* 더 보기 버튼 */}
+            {pagination && pagination.hasMore && (
+              <div className="load-more-section">
+                <button
+                  onClick={pagination.onLoadMore}
+                  disabled={pagination.isLoadingMore}
+                  className="btn btn-secondary load-more-btn"
+                >
+                  {pagination.isLoadingMore ? (
+                    <>
+                      <span className="loading-spinner">⏳</span>
+                      추가 사진 불러오는 중...
+                    </>
+                  ) : (
+                    <>
+                      <span className="button-icon">⬇️</span>
+                      더 많은 사진 보기
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
           </div>
         )}
       </main>

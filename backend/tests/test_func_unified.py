@@ -93,6 +93,13 @@ def handler_unified(request_data: dict = None) -> dict:
                 exif_data = file_data.get('exifData', {})
                 location = file_data.get('location')
 
+                # 디버깅: EXIF 데이터 확인
+                print(f"🔍 EXIF 데이터 디버깅:")
+                print(f"   file_data keys: {list(file_data.keys())}")
+                print(f"   exifData: {exif_data}")
+                print(f"   exifData type: {type(exif_data)}")
+                print(f"   location: {location}")
+
                 if not file_content_b64:
                     print("⚠️  파일 데이터가 없는 항목 건너뛰기")
                     continue

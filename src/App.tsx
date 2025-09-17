@@ -42,13 +42,26 @@ function App() {
   const [isUploading, setIsUploading] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
 
+  // 페이징 관련 상태
+  const [pagination, setPagination] = useState({
+    currentOffset: 0,
+    pageSize: 20,
+    hasMore: true,
+    isLoadingMore: false
+  })
+
   // 앱 시작 시 서버에서 기존 사진 목록 불러오기
   useEffect(() => {
     const loadExistingPhotos = async () => {
       try {
         console.log('🔄 서버에서 기존 사진 목록 불러오는 중...')
         const apiClient = new PhotoAPIClient()
-        const response = await apiClient.getPhotos(50, 0, 'upload_timestamp DESC')
+        // EXIF 촬영시간을 우선으로 하는 정렬 (EXIF가 없으면 업로드 시간 사용)
+        const response = await apiClient.getPhotos(
+          pagination.pageSize,
+          0,
+          'COALESCE(exif_data->>"timestamp", upload_timestamp) DESC'
+        )
 
         if (response.success && response.data) {
           console.log(`✅ ${response.data.photos.length}개 사진을 서버에서 불러왔습니다`)
@@ -59,12 +72,15 @@ function App() {
             filename: photo.filename,
             file_url: photo.file_url,
             thumbnail_urls: photo.thumbnail_urls,
+            file_size: photo.file_size, // 파일 크기 정보 추가
             file: null, // 서버에서 불러온 데이터는 File 객체가 없음
             description: photo.description || '',
             location: photo.location || undefined,
             thumbnail: undefined, // 서버 데이터는 thumbnail (로컬 dataUrl) 사용하지 않음
             standardThumbnails: undefined, // 서버 데이터는 standardThumbnails (로컬 dataUrl) 사용하지 않음
-            exifData: photo.exif_data || null,
+            exifData: photo.exif_data ? (typeof photo.exif_data === 'string' ? (() => {
+              try { return JSON.parse(photo.exif_data); } catch (e) { console.warn('EXIF data parsing failed:', e); return null; }
+            })() : photo.exif_data) : null,
             uploadedAt: new Date(photo.upload_timestamp || Date.now()),
             serverData: {
               fileUrl: photo.file_url,
@@ -75,6 +91,13 @@ function App() {
           }))
 
           setUploadedPhotos(serverPhotos)
+
+          // 페이징 상태 업데이트
+          setPagination(prev => ({
+            ...prev,
+            currentOffset: serverPhotos.length,
+            hasMore: response.data?.has_more || false
+          }))
         } else {
           console.log('⚠️ 서버에서 사진 목록을 불러오지 못했습니다:', response.message)
         }
@@ -87,6 +110,62 @@ function App() {
 
     loadExistingPhotos()
   }, [])
+
+  // 더 많은 사진 로드 함수
+  const loadMorePhotos = async () => {
+    if (!pagination.hasMore || pagination.isLoadingMore) return
+
+    setPagination(prev => ({ ...prev, isLoadingMore: true }))
+
+    try {
+      console.log(`🔄 추가 사진 로드 중 (offset: ${pagination.currentOffset})...`)
+      const apiClient = new PhotoAPIClient()
+      const response = await apiClient.getPhotos(
+        pagination.pageSize,
+        pagination.currentOffset,
+        'COALESCE(exif_data->>"timestamp", upload_timestamp) DESC'
+      )
+
+      if (response.success && response.data) {
+        console.log(`✅ ${response.data.photos.length}개 추가 사진을 불러왔습니다`)
+
+        const additionalPhotos: UnifiedPhotoData[] = response.data.photos.map(photo => ({
+          id: photo.id,
+          filename: photo.filename,
+          file_url: photo.file_url,
+          thumbnail_urls: photo.thumbnail_urls,
+          file_size: photo.file_size,
+          file: null,
+          description: photo.description || '',
+          location: photo.location || undefined,
+          thumbnail: undefined,
+          standardThumbnails: undefined,
+          exifData: photo.exif_data ? (typeof photo.exif_data === 'string' ? (() => {
+            try { return JSON.parse(photo.exif_data); } catch (e) { console.warn('EXIF data parsing failed:', e); return null; }
+          })() : photo.exif_data) : null,
+          uploadedAt: new Date(photo.upload_timestamp || Date.now()),
+          serverData: {
+            fileUrl: photo.file_url,
+            thumbnailUrls: photo.thumbnail_urls || {},
+            uploadTimestamp: photo.upload_timestamp,
+            fileSize: photo.file_size
+          }
+        }))
+
+        setUploadedPhotos(prev => [...prev, ...additionalPhotos])
+
+        setPagination(prev => ({
+          ...prev,
+          currentOffset: prev.currentOffset + additionalPhotos.length,
+          hasMore: response.data?.has_more || false
+        }))
+      }
+    } catch (error) {
+      console.error('❌ 추가 사진 로드 실패:', error)
+    } finally {
+      setPagination(prev => ({ ...prev, isLoadingMore: false }))
+    }
+  }
 
   const handleUpload = async (dataArray: PhotoUploadData[]) => {
     setIsUploading(true);
@@ -259,6 +338,11 @@ function App() {
             photos={uploadedPhotos}
             onUploadClick={handleUploadClick}
             onMapClick={handleMapClick}
+            pagination={{
+              hasMore: pagination.hasMore,
+              isLoadingMore: pagination.isLoadingMore,
+              onLoadMore: loadMorePhotos
+            }}
           />
         ) : currentPage === 'upload' ? (
           <UploadPage
