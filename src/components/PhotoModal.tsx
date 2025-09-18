@@ -12,7 +12,7 @@ interface PhotoModalProps {
   currentIndex?: number;
   totalCount?: number;
   onDelete?: (photoId: string) => void;
-  onUpdatePhoto?: (photoId: string, updates: { description?: string; timestamp?: string }) => Promise<void>;
+  onUpdatePhoto?: (photoId: string, updates: { description?: string; travel_date?: string }) => Promise<void>;
 }
 
 export const PhotoModal: React.FC<PhotoModalProps> = ({
@@ -196,7 +196,7 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
 
     setIsSaving(true);
     try {
-      const updates: { description?: string; timestamp?: string } = {};
+      const updates: { description?: string; travel_date?: string } = {};
 
       // 설명 변경사항
       if (editedDescription !== photo.description) {
@@ -206,9 +206,9 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
       // 날짜 변경사항 (EXIF 촬영시간이 없는 경우에만)
       if (!photo.exifData?.timestamp && editedDate) {
         const dateTime = new Date(editedDate + 'T12:00:00');
-        updates.timestamp = dateTime.toISOString();
+        updates.travel_date = dateTime.toISOString();
       } else if (!photo.exifData?.timestamp && !editedDate) {
-        updates.timestamp = '';
+        updates.travel_date = '';
       }
 
       if (Object.keys(updates).length > 0) {

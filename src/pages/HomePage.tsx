@@ -88,7 +88,7 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
     }
   };
 
-  const handlePhotoUpdate = async (photoId: string, updates: { description?: string; timestamp?: string }) => {
+  const handlePhotoUpdate = async (photoId: string, updates: { description?: string; travel_date?: string }) => {
     try {
       await updatePhoto(photoId, updates);
       if (onPhotoUpdated) {

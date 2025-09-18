@@ -11,52 +11,70 @@ interface LocationInfo {
 // 무료 OpenStreetMap Nominatim API를 사용한 역 지오코딩
 export const reverseGeocode = async (lat: number, lng: number): Promise<LocationInfo | null> => {
   try {
-    // Nominatim API 호출 (무료, 사용량 제한 있음)
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=ko,en&addressdetails=1&zoom=14`
-    );
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    // 먼저 한국 지역인지 확인하고, 한국이면 한국어 지역명 사용
+    const koreanRegion = getKoreanRegion(lat, lng);
+    if (koreanRegion) {
+      return {
+        address: koreanRegion,
+        city: koreanRegion,
+        region: koreanRegion,
+        country: '한국'
+      };
     }
-    
-    const data = await response.json();
-    
-    if (!data || data.error) {
-      console.warn('Geocoding API 오류:', data?.error);
-      return null;
+
+    // 해외 지역의 경우 CORS 우회를 시도하되, 실패하면 좌표로 표시
+    try {
+      // CORS 우회를 위해 프록시 서버 사용 (로컬에서만)
+      if (window.location.hostname === 'localhost') {
+        const API_BASE_URL = 'http://localhost:8001';
+        const response = await fetch(
+          `${API_BASE_URL}/geocoding/reverse?lat=${lat}&lng=${lng}`
+        );
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data) {
+            const data = result.data;
+            const address = data.address || {};
+            const displayName = data.display_name || '';
+
+            const city = address.city || address.town || address.village || address.county || address.state_district;
+            const region = address.state || address.province || address.region;
+            const country = address.country;
+
+            let shortAddress = '';
+            if (city && region) {
+              shortAddress = `${city}, ${region}`;
+            } else if (city) {
+              shortAddress = city;
+            } else if (region) {
+              shortAddress = region;
+            } else {
+              const parts = displayName.split(',').map((s: string) => s.trim());
+              shortAddress = parts.slice(0, 2).join(', ');
+            }
+
+            return {
+              address: shortAddress || displayName,
+              city,
+              region,
+              country
+            };
+          }
+        }
+      }
+    } catch (proxyError) {
+      console.warn('프록시 지오코딩 실패:', proxyError);
     }
-    
-    // 주소 정보 추출
-    const address = data.address || {};
-    const displayName = data.display_name || '';
-    
-    // 한국어 우선, 영어 대체
-    const city = address.city || address.town || address.village || address.county || address.state_district;
-    const region = address.state || address.province || address.region;
-    const country = address.country;
-    
-    // 짧은 주소 형태로 생성
-    let shortAddress = '';
-    if (city && region) {
-      shortAddress = `${city}, ${region}`;
-    } else if (city) {
-      shortAddress = city;
-    } else if (region) {
-      shortAddress = region;
-    } else {
-      // 마지막 수단: display_name에서 첫 두 부분 추출
-      const parts = displayName.split(',').map((s: string) => s.trim());
-      shortAddress = parts.slice(0, 2).join(', ');
-    }
-    
+
+    // 프록시 실패 시 좌표 표시로 fallback
     return {
-      address: shortAddress || displayName,
-      city,
-      region,
-      country
+      address: `${lat.toFixed(4)}, ${lng.toFixed(4)}`,
+      city: undefined,
+      region: undefined,
+      country: undefined
     };
-    
+
   } catch (error) {
     console.warn('역 지오코딩 실패:', error);
     return null;

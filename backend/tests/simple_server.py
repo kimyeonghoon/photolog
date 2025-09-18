@@ -70,6 +70,54 @@ class PhotoAPIHandler(BaseHTTPRequestHandler):
                     "message": f"Photo list error: {str(e)}"
                 }
                 self.send_json_response(500, error_response)
+        elif parsed_path.path == '/api/geocoding/reverse':
+            # 지오코딩 프록시 엔드포인트
+            query_params = parse_qs(parsed_path.query)
+            lat = query_params.get('lat', [None])[0]
+            lng = query_params.get('lng', [None])[0]
+
+            if not lat or not lng:
+                self.send_json_response(400, {
+                    "success": False,
+                    "message": "위도(lat)와 경도(lng) 파라미터가 필요합니다."
+                })
+                return
+
+            try:
+                # Nominatim API 호출
+                import requests
+                nominatim_url = f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lng}&accept-language=ko,en&addressdetails=1&zoom=14"
+
+                # User-Agent 헤더 추가 (Nominatim 정책 준수)
+                headers = {
+                    'User-Agent': 'Photolog/1.0 (contact@photolog.app)'
+                }
+
+                nominatim_response = requests.get(nominatim_url, headers=headers, timeout=10)
+
+                if nominatim_response.status_code == 200:
+                    data = nominatim_response.json()
+                    self.send_json_response(200, {
+                        "success": True,
+                        "data": data
+                    })
+                else:
+                    self.send_json_response(nominatim_response.status_code, {
+                        "success": False,
+                        "message": f"Geocoding API error: {nominatim_response.status_code}"
+                    })
+
+            except requests.RequestException as e:
+                self.send_json_response(500, {
+                    "success": False,
+                    "message": f"지오코딩 요청 실패: {str(e)}"
+                })
+            except Exception as e:
+                self.send_json_response(500, {
+                    "success": False,
+                    "message": f"지오코딩 서버 오류: {str(e)}"
+                })
+
         elif parsed_path.path.startswith('/storage/'):
             # 정적 파일 서빙 (photos, thumbnails)
             self.serve_static_file(parsed_path.path)
@@ -300,8 +348,21 @@ class PhotoAPIHandler(BaseHTTPRequestHandler):
                 print(f"📄 수정 데이터: {request_json}")
 
                 # NoSQL 클라이언트로 메타데이터 업데이트
-                sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'shared'))
-                from nosql_client import OCINoSQLClient
+                import sys
+                import os
+                shared_path = os.path.join(os.path.dirname(__file__), '..', 'shared')
+                if shared_path not in sys.path:
+                    sys.path.insert(0, shared_path)
+
+                try:
+                    from nosql_client import OCINoSQLClient
+                except ImportError:
+                    # Fallback import method
+                    import importlib.util
+                    spec = importlib.util.spec_from_file_location("nosql_client", os.path.join(shared_path, "nosql_client.py"))
+                    nosql_client_module = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(nosql_client_module)
+                    OCINoSQLClient = nosql_client_module.OCINoSQLClient
 
                 nosql_client = OCINoSQLClient()
 

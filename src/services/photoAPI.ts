@@ -477,7 +477,7 @@ export class PhotoAPIClient {
   // 사진 정보 업데이트
   async updatePhoto(photoId: string, updates: {
     description?: string;
-    timestamp?: string;
+    travel_date?: string;
   }): Promise<{
     success: boolean;
     message: string;
@@ -565,7 +565,7 @@ export const deleteMultiplePhotos = async (photoIds: string[]): Promise<Array<{
 // 사진 정보 업데이트
 export const updatePhoto = async (photoId: string, updates: {
   description?: string;
-  timestamp?: string;
+  travel_date?: string;
 }): Promise<{
   success: boolean;
   message: string;
