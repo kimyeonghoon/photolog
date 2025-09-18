@@ -37,7 +37,10 @@
       "Bash(pip install:*)",
       "Bash(npm install)",
       "Bash(git commit:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(oci os bucket create:*)",
+      "Bash(oci nosql table create:*)",
+      "Bash(export NOSQL_COMPARTMENT_ID=ocid1.compartment.oc1..aaaaaaaamhidad3wjjhfjymz25keyffye4ttg7upjvpvamnnajzmyraa2dyq)"
     ],
     "deny": [],
     "ask": []
