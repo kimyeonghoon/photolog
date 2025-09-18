@@ -5,7 +5,7 @@
 
 const API_BASE_URL = window.location.hostname === 'localhost'
   ? 'http://localhost:8001'
-  : `${window.location.protocol}//${window.location.host}/api`
+  : `${window.location.protocol}//${window.location.host}/api/`
 
 export interface LoginRequest {
   email: string
