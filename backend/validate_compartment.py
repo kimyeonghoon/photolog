@@ -7,11 +7,13 @@ ioniere(루트) tenancy에 리소스 생성을 방지합니다.
 import os
 import sys
 
-# 위험한 tenancy ID (ioniere 루트)
-DANGEROUS_TENANCY_ID = "ocid1.tenancy.oc1..aaaaaaaayjjulcyf6jtw3slbdxockiwt2cfbzg2z75sumuamy6njcce3a4ma"
+def is_tenancy_id(ocid):
+    """OCID가 tenancy ID 패턴인지 확인"""
+    return ocid.startswith('ocid1.tenancy.oc1..')
 
-# 올바른 compartment ID (yeonghoon.kim)
-CORRECT_COMPARTMENT_ID = "ocid1.compartment.oc1..aaaaaaaamhidad3wjjhfjymz25keyffye4ttg7upjvpvamnnajzmyraa2dyq"
+def is_compartment_id(ocid):
+    """OCID가 compartment ID 패턴인지 확인"""
+    return ocid.startswith('ocid1.compartment.oc1..')
 
 def validate_compartment():
     """현재 설정된 compartment가 올바른지 검증"""
@@ -23,19 +25,23 @@ def validate_compartment():
         print("❌ NOSQL_COMPARTMENT_ID 환경변수가 설정되지 않았습니다!")
         return False
 
-    if current_compartment == DANGEROUS_TENANCY_ID:
-        print("🚨 경고: ioniere(루트) tenancy ID가 설정되어 있습니다!")
+    # Tenancy ID 패턴 체크 (위험)
+    if is_tenancy_id(current_compartment):
+        print("🚨 경고: Tenancy ID가 설정되어 있습니다!")
         print(f"   현재 설정: {current_compartment}")
-        print(f"   올바른 설정: {CORRECT_COMPARTMENT_ID}")
-        print("   yeonghoon.kim compartment를 사용해야 합니다!")
+        print("   Compartment ID를 사용해야 합니다 (ocid1.compartment.oc1..로 시작)")
+        print("   루트 tenancy에 리소스를 생성하지 마세요!")
         return False
 
-    if current_compartment == CORRECT_COMPARTMENT_ID:
-        print("✅ 올바른 compartment가 설정되어 있습니다 (yeonghoon.kim)")
+    # Compartment ID 패턴 체크 (안전)
+    if is_compartment_id(current_compartment):
+        print("✅ 올바른 compartment ID 패턴입니다")
+        print(f"   설정된 ID: {current_compartment}")
         return True
 
-    print(f"⚠️  알 수 없는 compartment ID: {current_compartment}")
-    print(f"   예상된 ID: {CORRECT_COMPARTMENT_ID}")
+    # 알 수 없는 패턴
+    print(f"⚠️  알 수 없는 OCID 패턴: {current_compartment}")
+    print("   올바른 compartment ID인지 확인해주세요 (ocid1.compartment.oc1..로 시작)")
     return False
 
 def main():
