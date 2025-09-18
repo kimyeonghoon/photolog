@@ -1,5 +1,14 @@
-// 역 지오코딩 유틸리티
-// 위도/경도를 사용하여 대략적인 위치명을 반환
+/**
+ * 역 지오코딩 유틸리티
+ * GPS 좌표(위도/경도)를 사용하여 사람이 읽을 수 있는 위치명으로 변환
+ *
+ * 주요 기능:
+ * - 한국 지역 특수 처리 (한글 지역명 제공)
+ * - OpenStreetMap Nominatim API를 통한 해외 지역 처리
+ * - CORS 문제 해결을 위한 백엔드 프록시 사용
+ * - 메모리 캐시를 통한 성능 최적화
+ * - Graceful fallback (좌표 표시로 대체)
+ */
 
 interface LocationInfo {
   address: string;

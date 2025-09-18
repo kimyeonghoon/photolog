@@ -1,27 +1,50 @@
 #!/usr/bin/env python3
 """
-간단한 로컬 API 서버
-썸네일 생성 기능 테스트용
+포토로그 로컬 개발 서버
+
+개발 및 테스트 목적의 간단한 HTTP API 서버입니다.
+주요 기능:
+- 사진 업로드 및 메타데이터 관리
+- 썸네일 자동 생성
+- JWT 기반 인증 시스템
+- 텔레그램 봇 연동 2FA
+- CORS 지원
+- 지오코딩 프록시
+- OCI NoSQL 및 Object Storage 연동
+
+Usage:
+    python3 simple_server.py --port 8001
 """
+# 표준 라이브러리
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
 import os
 import sys
 import io
 from urllib.parse import urlparse, parse_qs
-import sys
-import os
 
-# Docker 환경에서의 경로 설정
+# Docker 환경 및 로컬 개발 환경에서의 경로 설정
+# 파일 경로를 기반으로 프로젝트 루트 및 공유 모듈 경로 설정
 current_dir = os.path.dirname(os.path.abspath(__file__)) if __file__ else '/app/tests'
-sys.path.insert(0, current_dir)
-sys.path.insert(0, os.path.join(current_dir, '..'))
+sys.path.insert(0, current_dir)                    # 현재 디렉토리 (tests)
+sys.path.insert(0, os.path.join(current_dir, '..')) # 부모 디렉토리 (backend)
 
-from test_func_unified import handler_unified
-sys.path.insert(0, os.path.join(current_dir, '..', 'shared'))
-from auth_service import AuthService, verify_auth_token, require_auth
+# 프로젝트 모듈 임포트
+from test_func_unified import handler_unified       # 통합 사진 업로드 핸들러
+sys.path.insert(0, os.path.join(current_dir, '..', 'shared')) # 공유 모듈 경로
+from auth_service import AuthService, verify_auth_token, require_auth  # JWT 인증 서비스
 
 class PhotoAPIHandler(BaseHTTPRequestHandler):
+    """
+    포토로그 API 요청 처리 핸들러
+
+    HTTP 요청을 받아서 각 엔드포인트별로 적절한 처리를 수행:
+    - GET: 헬스체크, 사진 조회, 정적 파일 서빙
+    - POST: 인증, 사진 업로드
+    - PUT: 사진 메타데이터 수정
+    - DELETE: 사진 삭제
+    - OPTIONS: CORS preflight 처리
+    """
     def do_OPTIONS(self):
         """CORS preflight 요청 처리"""
         self.send_response(200)

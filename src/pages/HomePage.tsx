@@ -50,28 +50,46 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
     }
   };
 
+  /**
+   * 모달 닫기 핸들러
+   */
   const handleModalClose = () => {
     setSelectedPhotoIndex(null);
   };
 
+  /**
+   * 이전 사진으로 이동 핸들러
+   */
   const handlePreviousPhoto = () => {
     if (selectedPhotoIndex !== null && selectedPhotoIndex > 0) {
       setSelectedPhotoIndex(selectedPhotoIndex - 1);
     }
   };
 
+  /**
+   * 다음 사진으로 이동 핸들러
+   */
   const handleNextPhoto = () => {
     if (selectedPhotoIndex !== null && selectedPhotoIndex < sortedPhotos.length - 1) {
       setSelectedPhotoIndex(selectedPhotoIndex + 1);
     }
   };
 
+  /**
+   * 사진 정렬 순서 변경 핸들러
+   * @param order 정렬 순서 ('newest' | 'oldest')
+   */
   const handleSortChange = (order: 'newest' | 'oldest') => {
     setSortOrder(order);
   };
 
+  /**
+   * 단일 사진 삭제 핸들러 (PhotoModal에서 호출)
+   * 인증 체크 후 사진 삭제 수행
+   * @param photoId 삭제할 사진 ID
+   */
   const handlePhotoDelete = async (photoId: string) => {
-    // 인증 체크
+    // 인증 체크 - 로그인되지 않은 경우 로그인 페이지로 이동
     if (!authState?.isAuthenticated) {
       authState?.onLoginClick();
       return;
@@ -80,7 +98,7 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
     try {
       await deleteSinglePhoto(photoId);
       if (onPhotoDeleted) {
-        onPhotoDeleted(photoId);
+        onPhotoDeleted(photoId);  // 상위 컴포넌트에 삭제 완료 알림
       }
     } catch (error) {
       console.error('사진 삭제 실패:', error);
@@ -88,11 +106,16 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
     }
   };
 
+  /**
+   * 사진 메타데이터 업데이트 핸들러 (PhotoModal에서 호출)
+   * @param photoId 업데이트할 사진 ID
+   * @param updates 변경할 데이터 (설명, 여행날짜)
+   */
   const handlePhotoUpdate = async (photoId: string, updates: { description?: string; travel_date?: string }) => {
     try {
       await updatePhoto(photoId, updates);
       if (onPhotoUpdated) {
-        onPhotoUpdated(photoId, updates);
+        onPhotoUpdated(photoId, updates);  // 상위 컴포넌트에 업데이트 완료 알림
       }
     } catch (error) {
       console.error('사진 업데이트 실패:', error);
@@ -100,17 +123,24 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
     }
   };
 
+  /**
+   * 다중 선택 모드 토글 핸들러
+   */
   const handleSelectionModeToggle = () => {
     setIsSelectionMode(!isSelectionMode);
     setSelectedPhotos(new Set()); // 선택 모드 전환 시 선택 초기화
   };
 
+  /**
+   * 전체 선택/해제 핸들러
+   * 모든 사진이 선택된 경우 해제, 아니면 전체 선택
+   */
   const handleSelectAll = () => {
     if (selectedPhotos.size === sortedPhotos.length) {
       // 모든 사진이 선택되어 있으면 전체 선택 해제
       setSelectedPhotos(new Set());
     } else {
-      // 전체 선택
+      // 전체 선택 - ID가 있는 사진만 선택
       const allPhotoIds = new Set(sortedPhotos.map(photo => photo.id).filter((id): id is string => id !== undefined));
       setSelectedPhotos(allPhotoIds);
     }

@@ -273,7 +273,7 @@ export class PhotoAPIClient {
     onProgress?: (completed: number, total: number, currentFile?: string) => void
   ): Promise<APIPhotoUploadResponse[]> {
     try {
-      // 모든 파일을 한 번에 처리할 데이터로 변환
+      // 모든 파일을 병렬로 Base64 인코딩 및 데이터 준비
       const filesData = await Promise.all(
         files.map(async ({ file, description, thumbnails, exifData, location }) => {
           const fileBase64 = await this.fileToBase64(file);
@@ -288,10 +288,10 @@ export class PhotoAPIClient {
         })
       );
 
-      // 통합 엔드포인트로 전송
+      // 통합 업로드 엔드포인트용 요청 데이터 구성
       const requestData = {
         method: 'POST',
-        files: filesData
+        files: filesData  // 모든 파일 데이터 배열
       };
 
       const response = await this.makeRequest<{
@@ -316,12 +316,12 @@ export class PhotoAPIClient {
       });
 
       if (response.success && response.data) {
-        // 프로그레스 업데이트
+        // 업로드 완료 후 프로그레스 콜백 호출
         if (onProgress) {
           onProgress(response.data.summary.success, response.data.summary.total);
         }
 
-        // 결과 변환
+        // 서버 응답을 클라이언트 형식으로 변환
         return response.data.files.map(fileResult => {
           if (fileResult.success && fileResult.data) {
             return {
@@ -362,21 +362,26 @@ export class PhotoAPIClient {
     }>,
     onProgress?: (completed: number, total: number, currentFile?: string) => void
   ): Promise<APIPhotoUploadResponse[]> {
-    // 통합 스토리지 서비스 사용 여부에 따라 분기
+    // 설정에 따른 업로드 방식 선택
     if (USE_UNIFIED_STORAGE) {
       return this.uploadMultiplePhotosUnified(files, onProgress);
     }
+
+    // 순차 업로드 방식 (기존 방식)
     const results: APIPhotoUploadResponse[] = [];
     const total = files.length;
 
+    // 파일별 순차 업로드 처리
     for (let i = 0; i < total; i++) {
       const { file, description, thumbnails, exifData, location } = files[i];
 
       try {
+        // 업로드 시작 프로그레스 알림
         if (onProgress) {
           onProgress(i, total, file.name);
         }
 
+        // 개별 파일 업로드 실행
         const result = await this.uploadPhoto(file, description, {
           thumbnails,
           exifData,
@@ -384,12 +389,13 @@ export class PhotoAPIClient {
         });
         results.push(result);
 
+        // 업로드 완료 프로그레스 알림
         if (onProgress) {
           onProgress(i + 1, total);
         }
 
       } catch (error) {
-        // 개별 파일 업로드 실패 시에도 계속 진행
+        // 개별 파일 실패 시에도 나머지 파일 계속 처리
         console.error(`파일 ${file.name} 업로드 실패:`, error);
 
         const errorResponse: APIPhotoUploadResponse = {
