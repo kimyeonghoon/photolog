@@ -8,5 +8,11 @@ Pillow==10.0.0
 
 # 기본 웹 서버 (내장 HTTP 서버 사용하므로 추가 프레임워크 불필요)
 
+# HTTP 요청 (텔레그램 API)
+requests==2.31.0
+
+# JWT 토큰 처리
+PyJWT==2.8.0
+
 # 개발 및 디버깅
 python-dotenv==1.0.0
