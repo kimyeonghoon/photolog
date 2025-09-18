@@ -482,7 +482,7 @@ export class PhotoAPIClient {
     data?: any;
   }> {
     try {
-      const response = await fetch(`${this.baseURL}/api/photos/${photoId}`, {
+      const result = await this.makeRequest<any>(`/api/photos/${photoId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -490,19 +490,10 @@ export class PhotoAPIClient {
         body: JSON.stringify(updates)
       });
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        return {
-          success: false,
-          message: result.message || '사진 업데이트 실패'
-        };
-      }
-
       return {
-        success: true,
-        message: '사진 정보가 성공적으로 업데이트되었습니다.',
-        data: result.data
+        success: result.success || true,
+        message: result.message || '사진 정보가 성공적으로 업데이트되었습니다.',
+        data: result.updated_data || result.data
       };
     } catch (error) {
       return {
