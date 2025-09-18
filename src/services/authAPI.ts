@@ -5,7 +5,7 @@
 
 const API_BASE_URL = window.location.hostname === 'localhost'
   ? 'http://localhost:8001'
-  : `${window.location.protocol}//${window.location.host}`
+  : `${window.location.protocol}//${window.location.host}/api`
 
 export interface LoginRequest {
   email: string
@@ -49,7 +49,7 @@ export class AuthAPIClient {
    */
   async requestLogin(email: string): Promise<LoginResponse> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -75,7 +75,7 @@ export class AuthAPIClient {
    */
   async verifyCode(code: string): Promise<VerifyResponse> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/verify`, {
+      const response = await fetch(`${API_BASE_URL}/auth/verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

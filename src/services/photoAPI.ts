@@ -8,7 +8,7 @@ import { authAPI } from './authAPI'
 // API 설정
 const API_BASE_URL = window.location.hostname === 'localhost'
   ? 'http://localhost:8001'
-  : `${window.location.protocol}//${window.location.host}`;
+  : `${window.location.protocol}//${window.location.host}/api`;
 
 // 통합 스토리지 서비스 사용 여부 (환경변수로 제어)
 const USE_UNIFIED_STORAGE = true;
@@ -184,7 +184,7 @@ export class PhotoAPIClient {
     version: string;
     endpoints: string[];
   }> {
-    return this.makeRequest('/api/health');
+    return this.makeRequest('/health');
   }
 
   /**
@@ -242,7 +242,7 @@ export class PhotoAPIClient {
 
       // API 호출
       const response = await this.makeRequest<APIPhotoUploadResponse>(
-        '/api/photos/upload',
+        '/photos/upload',
         {
           method: 'POST',
           body: JSON.stringify(requestData)
@@ -310,7 +310,7 @@ export class PhotoAPIClient {
             storage_type: string;
           };
         };
-      }>('/api/photos/upload-unified', {
+      }>('/photos/upload-unified', {
         method: 'POST',
         body: JSON.stringify(requestData)
       });
@@ -420,7 +420,7 @@ export class PhotoAPIClient {
     });
 
     return this.makeRequest<APIPhotosListResponse>(
-      `/api/photos?${params}`
+      `/photos?${params}`
     );
   }
 
@@ -428,7 +428,7 @@ export class PhotoAPIClient {
    * 특정 사진 조회
    */
   async getPhoto(photoId: string): Promise<APIPhotosListResponse['data']> {
-    return this.makeRequest(`/api/photos/${photoId}`);
+    return this.makeRequest(`/photos/${photoId}`);
   }
 
   /**
@@ -439,7 +439,7 @@ export class PhotoAPIClient {
     message: string;
     photo_id: string;
   }> {
-    return this.makeRequest(`/api/photos/${photoId}`, {
+    return this.makeRequest(`/photos/${photoId}`, {
       method: 'DELETE'
     });
   }
@@ -484,7 +484,7 @@ export class PhotoAPIClient {
     data?: any;
   }> {
     try {
-      const result = await this.makeRequest<any>(`/api/photos/${photoId}`, {
+      const result = await this.makeRequest<any>(`/photos/${photoId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
