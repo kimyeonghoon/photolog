@@ -401,7 +401,7 @@ class UnifiedStorageService:
             if self.nosql_client:
                 try:
                     nosql_data = {
-                        "photo_id": photo_id,
+                        "id": photo_id,  # PRIMARY KEY를 id로 변경
                         "filename": f"{photo_id}{file_extension}",
                         "description": metadata.get("description", "") if metadata else "",
                         "file_url": original_result["url"],

@@ -3,6 +3,8 @@
  * 사진 업로드 및 조회 기능 제공
  */
 
+import { authAPI } from './authAPI'
+
 // API 설정
 const API_BASE_URL = 'http://localhost:8001';
 
@@ -133,9 +135,12 @@ export class PhotoAPIClient {
   ): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
 
+    // 인증 헤더 추가
+    const authHeaders = authAPI.getAuthHeaders();
+
     const defaultOptions: RequestInit = {
       headers: {
-        'Content-Type': 'application/json',
+        ...authHeaders,
         ...options.headers,
       },
     };

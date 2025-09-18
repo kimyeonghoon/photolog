@@ -42,7 +42,13 @@
       "Bash(oci nosql table create:*)",
       "Bash(export NOSQL_COMPARTMENT_ID=ocid1.compartment.oc1..aaaaaaaamhidad3wjjhfjymz25keyffye4ttg7upjvpvamnnajzmyraa2dyq)",
       "Bash(chmod:*)",
-      "Bash(export NOSQL_COMPARTMENT_ID)"
+      "Bash(export NOSQL_COMPARTMENT_ID)",
+      "WebFetch(domain:photolog.yeonghoon.kim)",
+      "Bash(export TELEGRAM_CHAT_ID=test-chat-id)",
+      "Bash(export ALLOWED_EMAIL=admin@photolog.app)",
+      "Bash(export TELEGRAM_CHAT_ID=5496782369)",
+      "Bash(export SECRET_KEY=photolog-secret-key)",
+      "Bash(__NEW_LINE__ python3 -c \"\nimport sys\nsys.path.append(''tests'')\nsys.path.append(''shared'')\n\nfrom auth_service import AuthService\nimport os\n\nprint(''🤖 텔레그램 봇 설정 확인'')\nprint(f''TELEGRAM_BOT_TOKEN: {os.getenv(\"\"TELEGRAM_BOT_TOKEN\"\", \"\"Not set\"\")[:20]}...'')\nprint(f''TELEGRAM_CHAT_ID: {os.getenv(\"\"TELEGRAM_CHAT_ID\"\", \"\"Not set\"\")}'')\nprint(f''ALLOWED_EMAIL: {os.getenv(\"\"ALLOWED_EMAIL\"\", \"\"Not set\"\")}'')\n\nprint(''\\n📱 실제 텔레그램 봇 테스트'')\nsuccess, message = AuthService.verify_email_and_send_code(''admin@photolog.app'', ''127.0.0.1'')\nprint(f''결과: {success}'')\nprint(f''메시지: {message}'')\n\nif success and ''텔레그램으로 전송'' in message:\n    print(''\\n✅ 텔레그램 봇이 정상적으로 작동합니다!'')\n    print(''📱 텔레그램 앱에서 인증 코드를 확인하세요.'')\nelse:\n    print(''\\n⚠️ 텔레그램 봇 설정을 확인해주세요.'')\n\")"
     ],
     "deny": [],
     "ask": []

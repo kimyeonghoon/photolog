@@ -18,6 +18,8 @@ sys.path.insert(0, current_dir)
 sys.path.insert(0, os.path.join(current_dir, '..'))
 
 from test_func_unified import handler_unified
+sys.path.insert(0, os.path.join(current_dir, '..', 'shared'))
+from auth_service import AuthService, verify_auth_token, require_auth
 
 class PhotoAPIHandler(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
@@ -37,7 +39,16 @@ class PhotoAPIHandler(BaseHTTPRequestHandler):
                 "success": True,
                 "message": "Server is running",
                 "version": "1.0.0",
-                "endpoints": ["/api/health", "/api/photos/upload", "/api/photos/upload-unified", "/api/photos", "/api/photos/{id}", "/storage/*"]
+                "endpoints": [
+                    "/api/health",
+                    "/api/auth/login",
+                    "/api/auth/verify",
+                    "/api/photos/upload",
+                    "/api/photos/upload-unified",
+                    "/api/photos",
+                    "/api/photos/{id}",
+                    "/storage/*"
+                ]
             }
             self.send_json_response(200, response_data)
         elif parsed_path.path == '/api/photos':
@@ -102,12 +113,129 @@ class PhotoAPIHandler(BaseHTTPRequestHandler):
         """POST 요청 처리"""
         parsed_path = urlparse(self.path)
 
-        if parsed_path.path == '/api/photos/upload' or parsed_path.path == '/api/photos/upload-unified':
+        if parsed_path.path == '/api/auth/login':
+            # 인증 로그인 요청
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length)
+
+            try:
+                request_json = json.loads(post_data.decode('utf-8'))
+                email = request_json.get('email', '').strip()
+
+                if not email:
+                    self.send_json_response(400, {
+                        "success": False,
+                        "message": "이메일을 입력해주세요."
+                    })
+                    return
+
+                # 클라이언트 IP 주소 가져오기
+                client_ip = self.client_address[0]
+
+                # 이메일 검증 및 텔레그램 코드 발송
+                success, message = AuthService.verify_email_and_send_code(email, client_ip)
+
+                if success:
+                    self.send_json_response(200, {
+                        "success": True,
+                        "message": message
+                    })
+                else:
+                    self.send_json_response(400, {
+                        "success": False,
+                        "message": message
+                    })
+
+            except json.JSONDecodeError:
+                self.send_json_response(400, {
+                    "success": False,
+                    "message": "잘못된 JSON 형식입니다."
+                })
+            except Exception as e:
+                print(f"로그인 요청 오류: {e}")
+                self.send_json_response(500, {
+                    "success": False,
+                    "message": "서버 오류가 발생했습니다."
+                })
+
+        elif parsed_path.path == '/api/auth/verify':
+            # 인증 코드 검증
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length)
+
+            try:
+                request_json = json.loads(post_data.decode('utf-8'))
+                code = request_json.get('code', '').strip()
+
+                if not code:
+                    self.send_json_response(400, {
+                        "success": False,
+                        "message": "인증 코드를 입력해주세요."
+                    })
+                    return
+
+                # 인증 코드 검증
+                user = AuthService.validate_login_code(code)
+
+                if user:
+                    # JWT 토큰 생성
+                    token = AuthService.create_access_token({
+                        "user_id": user['id'],
+                        "telegram_chat_id": user['telegram_chat_id']
+                    })
+
+                    if token:
+                        self.send_json_response(200, {
+                            "success": True,
+                            "message": "로그인 성공",
+                            "token": token,
+                            "user": {
+                                "id": user['id'],
+                                "telegram_chat_id": user['telegram_chat_id']
+                            }
+                        })
+                    else:
+                        self.send_json_response(500, {
+                            "success": False,
+                            "message": "토큰 생성 실패"
+                        })
+                else:
+                    self.send_json_response(400, {
+                        "success": False,
+                        "message": "잘못된 인증 코드입니다."
+                    })
+
+            except json.JSONDecodeError:
+                self.send_json_response(400, {
+                    "success": False,
+                    "message": "잘못된 JSON 형식입니다."
+                })
+            except Exception as e:
+                print(f"인증 검증 오류: {e}")
+                self.send_json_response(500, {
+                    "success": False,
+                    "message": "서버 오류가 발생했습니다."
+                })
+
+        elif parsed_path.path == '/api/photos/upload' or parsed_path.path == '/api/photos/upload-unified':
+            # 인증 확인
+            auth_header = self.headers.get('Authorization')
+            user_data = verify_auth_token(auth_header)
+
+            if not user_data:
+                self.send_json_response(401, {
+                    "success": False,
+                    "message": "인증이 필요합니다. 로그인 후 다시 시도하세요.",
+                    "error_code": "UNAUTHORIZED"
+                })
+                return
+
             content_length = int(self.headers['Content-Length'])
             post_data = self.rfile.read(content_length)
 
             try:
                 print("🚀 통합 업로드 핸들러 호출...")
+                print(f"👤 인증된 사용자: {user_data.get('user_id')}")
 
                 # POST 데이터를 JSON으로 파싱
                 try:
@@ -148,10 +276,23 @@ class PhotoAPIHandler(BaseHTTPRequestHandler):
         # /api/photos/{photo_id} 패턴 확인
         path_parts = parsed_path.path.strip('/').split('/')
         if len(path_parts) == 3 and path_parts[0] == 'api' and path_parts[1] == 'photos':
+            # 인증 확인
+            auth_header = self.headers.get('Authorization')
+            user_data = verify_auth_token(auth_header)
+
+            if not user_data:
+                self.send_json_response(401, {
+                    "success": False,
+                    "message": "인증이 필요합니다. 로그인 후 다시 시도하세요.",
+                    "error_code": "UNAUTHORIZED"
+                })
+                return
+
             photo_id = path_parts[2]
 
             try:
                 print(f"🗑️ 사진 삭제 요청: {photo_id}")
+                print(f"👤 인증된 사용자: {user_data.get('user_id')}")
 
                 # 삭제 함수 호출
                 from test_func_unified import delete_photo

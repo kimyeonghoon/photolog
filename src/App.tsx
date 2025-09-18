@@ -3,6 +3,8 @@ import { HomePage } from './pages/HomePage'
 import { UploadPage } from './pages/UploadPage'
 import { MapPage } from './pages/MapPage'
 import { ThemeProvider } from './contexts/ThemeContext'
+import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { LoginModal } from './components/LoginModal'
 import { uploadMultiplePhotos, PhotoAPIClient } from './services/photoAPI'
 import type { UnifiedPhotoData } from './types'
 import './App.css'
@@ -36,11 +38,13 @@ interface PhotoUploadData {
 }
 
 
-function App() {
+function MainApp() {
+  const { isAuthenticated, isLoading: authLoading, logout } = useAuth()
   const [uploadedPhotos, setUploadedPhotos] = useState<UnifiedPhotoData[]>([])
   const [currentPage, setCurrentPage] = useState<'home' | 'upload' | 'map'>('home')
   const [isUploading, setIsUploading] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [showLoginModal, setShowLoginModal] = useState(false)
 
   // 페이징 관련 상태
   const [pagination, setPagination] = useState({
@@ -248,6 +252,13 @@ function App() {
   }
 
   const handleUploadClick = () => {
+    console.log('Upload button clicked, authenticated:', isAuthenticated) // 디버깅용
+    if (!isAuthenticated) {
+      console.log('Not authenticated, showing login modal') // 디버깅용
+      setShowLoginModal(true)
+      return
+    }
+    console.log('Authenticated, going to upload page') // 디버깅용
     setCurrentPage('upload')
   }
 
@@ -291,49 +302,121 @@ function App() {
   }
 
 
+  // 인증 로딩 중일 때
+  if (authLoading) {
+    return (
+      <div className="loading-container" style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        flexDirection: 'column'
+      }}>
+        <div style={{ fontSize: '18px', marginBottom: '10px' }}>🔐 인증 상태 확인 중...</div>
+        <div style={{ fontSize: '14px', color: '#666' }}>로그인 정보를 확인하고 있습니다</div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="app">
+      {/* 인증 상태 표시 */}
+      {isAuthenticated && (
+        <div style={{
+          position: 'fixed',
+          top: '10px',
+          right: '10px',
+          background: 'rgba(0, 0, 0, 0.8)',
+          color: 'white',
+          padding: '8px 12px',
+          borderRadius: '6px',
+          fontSize: '12px',
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          <span>🔐 로그인됨</span>
+          <button
+            onClick={logout}
+            style={{
+              background: 'transparent',
+              border: '1px solid white',
+              color: 'white',
+              padding: '2px 6px',
+              borderRadius: '4px',
+              fontSize: '10px',
+              cursor: 'pointer'
+            }}
+          >
+            로그아웃
+          </button>
+        </div>
+      )}
+
+      {isLoading ? (
+        <div className="loading-container" style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100vh',
+          flexDirection: 'column'
+        }}>
+          <div style={{ fontSize: '18px', marginBottom: '10px' }}>🔄 사진을 불러오는 중...</div>
+          <div style={{ fontSize: '14px', color: '#666' }}>서버에서 기존 사진 목록을 가져오고 있습니다</div>
+        </div>
+      ) : currentPage === 'home' ? (
+        <HomePage
+          photos={uploadedPhotos}
+          onUploadClick={handleUploadClick}
+          onMapClick={handleMapClick}
+          onPhotoDeleted={handlePhotoDeleted}
+          onPhotoUpdated={handlePhotoUpdated}
+          pagination={{
+            hasMore: pagination.hasMore,
+            isLoadingMore: pagination.isLoadingMore,
+            onLoadMore: loadMorePhotos
+          }}
+          authState={{ isAuthenticated, onLoginClick: () => setShowLoginModal(true) }}
+        />
+      ) : currentPage === 'upload' ? (
+        <UploadPage
+          onUpload={handleUpload}
+          onError={handleError}
+          onBackClick={handleBackClick}
+          onMapClick={() => setCurrentPage('map')}
+          isUploading={isUploading}
+        />
+      ) : (
+        <MapPage
+          photos={uploadedPhotos}
+          onBackClick={handleBackClick}
+          onUploadClick={handleUploadClick}
+        />
+      )}
+
+      {/* 로그인 모달 */}
+      <LoginModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        onSuccess={() => {
+          setShowLoginModal(false)
+          // 로그인 성공 후 업로드 페이지로 이동
+          setTimeout(() => {
+            setCurrentPage('upload')
+          }, 500)
+        }}
+      />
+    </div>
+  )
+}
+
+function App() {
   return (
     <ThemeProvider>
-      <div className="app">
-        {isLoading ? (
-          <div className="loading-container" style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            height: '100vh',
-            flexDirection: 'column'
-          }}>
-            <div style={{ fontSize: '18px', marginBottom: '10px' }}>🔄 사진을 불러오는 중...</div>
-            <div style={{ fontSize: '14px', color: '#666' }}>서버에서 기존 사진 목록을 가져오고 있습니다</div>
-          </div>
-        ) : currentPage === 'home' ? (
-          <HomePage
-            photos={uploadedPhotos}
-            onUploadClick={handleUploadClick}
-            onMapClick={handleMapClick}
-            onPhotoDeleted={handlePhotoDeleted}
-            onPhotoUpdated={handlePhotoUpdated}
-            pagination={{
-              hasMore: pagination.hasMore,
-              isLoadingMore: pagination.isLoadingMore,
-              onLoadMore: loadMorePhotos
-            }}
-          />
-        ) : currentPage === 'upload' ? (
-          <UploadPage
-            onUpload={handleUpload}
-            onError={handleError}
-            onBackClick={handleBackClick}
-            onMapClick={() => setCurrentPage('map')}
-            isUploading={isUploading}
-          />
-        ) : (
-          <MapPage 
-            photos={uploadedPhotos}
-            onBackClick={handleBackClick}
-            onUploadClick={() => setCurrentPage('upload')}
-          />
-        )}
-      </div>
+      <AuthProvider>
+        <MainApp />
+      </AuthProvider>
     </ThemeProvider>
   )
 }

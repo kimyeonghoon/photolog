@@ -18,9 +18,13 @@ interface HomePageProps {
     isLoadingMore: boolean;
     onLoadMore: () => void;
   };
+  authState?: {
+    isAuthenticated: boolean;
+    onLoginClick: () => void;
+  };
 }
 
-export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMapClick, onPhotoDeleted, onPhotoUpdated, pagination }) => {
+export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMapClick, onPhotoDeleted, onPhotoUpdated, pagination, authState }) => {
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -67,6 +71,12 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
   };
 
   const handlePhotoDelete = async (photoId: string) => {
+    // 인증 체크
+    if (!authState?.isAuthenticated) {
+      authState?.onLoginClick();
+      return;
+    }
+
     try {
       await deleteSinglePhoto(photoId);
       if (onPhotoDeleted) {
@@ -108,6 +118,12 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
 
   const handleDeleteSelected = async () => {
     if (selectedPhotos.size === 0) return;
+
+    // 인증 체크
+    if (!authState?.isAuthenticated) {
+      authState?.onLoginClick();
+      return;
+    }
 
     const confirmed = window.confirm(
       `선택한 ${selectedPhotos.size}장의 사진을 삭제하시겠습니까?\n⚠️ 삭제된 사진은 복구할 수 없습니다.`

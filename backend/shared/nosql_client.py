@@ -74,7 +74,7 @@ class OCINoSQLClient:
 
             return {
                 "success": True,
-                "photo_id": photo_data['photo_id'],
+                "photo_id": photo_data['id'],  # id 필드를 photo_id로 반환
                 "version": response.data.version if hasattr(response.data, 'version') else None
             }
 
@@ -95,8 +95,8 @@ class OCINoSQLClient:
             사진 메타데이터 또는 None
         """
         try:
-            # NoSQL GET 요청 - key를 올바른 형식으로 전달
-            key_value = [f"photo_id:{photo_id}"]
+            # NoSQL GET 요청 - key를 올바른 형식으로 전달 (id 필드 사용)
+            key_value = [f"id:{photo_id}"]  # PRIMARY KEY인 id를 column-name:value 형식으로 사용
 
             response = self.nosql_client.get_row(
                 table_name_or_id=self.table_name,
@@ -106,6 +106,10 @@ class OCINoSQLClient:
 
             if response.data.value:
                 photo_data = response.data.value
+
+                # id 필드를 photo_id로 매핑
+                if 'id' in photo_data:
+                    photo_data['photo_id'] = photo_data['id']
 
                 # JSON 필드 파싱
                 if 'thumbnail_urls' in photo_data and isinstance(photo_data['thumbnail_urls'], str):
@@ -158,6 +162,10 @@ class OCINoSQLClient:
             photos = []
             for item in response.data.items:
                 photo_data = item
+
+                # id 필드를 photo_id로 매핑
+                if 'id' in photo_data:
+                    photo_data['photo_id'] = photo_data['id']
 
                 # JSON 필드 파싱
                 if 'thumbnail_urls' in photo_data and isinstance(photo_data['thumbnail_urls'], str):
@@ -222,6 +230,10 @@ class OCINoSQLClient:
             for item in response.data.items:
                 photo_data = item
 
+                # id 필드를 photo_id로 매핑
+                if 'id' in photo_data:
+                    photo_data['photo_id'] = photo_data['id']
+
                 if 'location' in photo_data and photo_data['location']:
                     try:
                         if isinstance(photo_data['location'], str):
@@ -274,8 +286,8 @@ class OCINoSQLClient:
             삭제 결과
         """
         try:
-            # key를 올바른 형식으로 전달
-            key_value = [f"photo_id:{photo_id}"]
+            # key를 올바른 형식으로 전달 (id 필드 사용)
+            key_value = [f"id:{photo_id}"]  # PRIMARY KEY인 id를 column-name:value 형식으로 사용
 
             response = self.nosql_client.delete_row(
                 table_name_or_id=self.table_name,

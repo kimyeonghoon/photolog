@@ -1,0 +1,381 @@
+/* 로그인 모달 스타일 */
+
+.login-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.login-modal {
+  background: white;
+  border-radius: 12px;
+  max-width: 400px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.login-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #eee;
+}
+
+.login-modal-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #666;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.close-button:hover {
+  background: #f5f5f5;
+  color: #333;
+}
+
+.login-modal-content {
+  padding: 24px;
+}
+
+.login-step-info {
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.login-step-info h3 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.login-step-info p {
+  margin: 4px 0;
+  color: #666;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.code-hint {
+  font-weight: 500;
+  color: #4a90e2 !important;
+  margin-top: 8px !important;
+}
+
+.input-group {
+  margin-bottom: 20px;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+  color: #333;
+  font-size: 14px;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: border-color 0.2s ease;
+  box-sizing: border-box;
+}
+
+.input-group input:focus {
+  outline: none;
+  border-color: #4a90e2;
+  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+}
+
+.input-group input:disabled {
+  background: #f8f9fa;
+  color: #666;
+  cursor: not-allowed;
+}
+
+.code-input {
+  text-align: center;
+  font-size: 24px !important;
+  font-weight: 600;
+  letter-spacing: 4px;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+}
+
+.error-message {
+  background: #fff5f5;
+  border: 1px solid #fed7d7;
+  color: #c53030;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.success-message {
+  background: #f0fff4;
+  border: 1px solid #9ae6b4;
+  color: #2f855a;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.submit-button {
+  width: 100%;
+  background: #4a90e2;
+  color: white;
+  border: none;
+  padding: 14px 20px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.submit-button:hover:not(:disabled) {
+  background: #357abd;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+}
+
+.submit-button:disabled {
+  background: #cbd5e0;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.button-group {
+  display: flex;
+  gap: 12px;
+}
+
+.back-button {
+  flex: 1;
+  background: #f7fafc;
+  color: #4a5568;
+  border: 1px solid #e2e8f0;
+  padding: 14px 20px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.back-button:hover:not(:disabled) {
+  background: #edf2f7;
+  border-color: #cbd5e0;
+}
+
+.back-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.submit-button {
+  flex: 2;
+}
+
+.login-success {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.success-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  animation: bounce 0.6s ease-in-out;
+}
+
+@keyframes bounce {
+  0%, 20%, 53%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40%, 43% {
+    transform: translateY(-10px);
+  }
+  70% {
+    transform: translateY(-5px);
+  }
+  90% {
+    transform: translateY(-2px);
+  }
+}
+
+.login-success h3 {
+  margin: 0 0 8px 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #2f855a;
+}
+
+.login-success p {
+  margin: 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.login-modal-footer {
+  padding: 16px 24px;
+  background: #f8f9fa;
+  border-top: 1px solid #eee;
+  border-radius: 0 0 12px 12px;
+}
+
+.security-notice {
+  font-size: 12px;
+  color: #666;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+/* 다크 모드 지원 */
+@media (prefers-color-scheme: dark) {
+  .login-modal {
+    background: #1a202c;
+    color: white;
+  }
+
+  .login-modal-header {
+    border-bottom-color: #2d3748;
+  }
+
+  .login-modal-header h2 {
+    color: white;
+  }
+
+  .close-button {
+    color: #a0aec0;
+  }
+
+  .close-button:hover {
+    background: #2d3748;
+    color: white;
+  }
+
+  .login-step-info h3 {
+    color: white;
+  }
+
+  .login-step-info p {
+    color: #a0aec0;
+  }
+
+  .input-group label {
+    color: white;
+  }
+
+  .input-group input {
+    background: #2d3748;
+    border-color: #4a5568;
+    color: white;
+  }
+
+  .input-group input:focus {
+    border-color: #63b3ed;
+  }
+
+  .input-group input:disabled {
+    background: #2d3748;
+    color: #a0aec0;
+  }
+
+  .back-button {
+    background: #2d3748;
+    color: #e2e8f0;
+    border-color: #4a5568;
+  }
+
+  .back-button:hover:not(:disabled) {
+    background: #4a5568;
+    border-color: #718096;
+  }
+
+  .login-modal-footer {
+    background: #2d3748;
+    border-top-color: #4a5568;
+  }
+
+  .security-notice {
+    color: #a0aec0;
+  }
+}
+
+/* 모바일 최적화 */
+@media (max-width: 480px) {
+  .login-modal {
+    width: 95%;
+    margin: 20px;
+  }
+
+  .login-modal-content {
+    padding: 20px;
+  }
+
+  .login-modal-header {
+    padding: 16px 20px;
+  }
+
+  .button-group {
+    flex-direction: column;
+  }
+
+  .back-button,
+  .submit-button {
+    flex: none;
+  }
+}
