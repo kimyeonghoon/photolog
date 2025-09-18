@@ -269,6 +269,98 @@ class PhotoAPIHandler(BaseHTTPRequestHandler):
         else:
             self.send_error(404, "Not Found")
 
+    def do_PUT(self):
+        """PUT 요청 처리 - 사진 메타데이터 수정"""
+        parsed_path = urlparse(self.path)
+
+        # /api/photos/{photo_id} 패턴 확인
+        path_parts = parsed_path.path.strip('/').split('/')
+        if len(path_parts) == 3 and path_parts[0] == 'api' and path_parts[1] == 'photos':
+            # 인증 확인
+            auth_header = self.headers.get('Authorization')
+            user_data = verify_auth_token(auth_header)
+
+            if not user_data:
+                self.send_json_response(401, {
+                    "success": False,
+                    "message": "인증이 필요합니다. 로그인 후 다시 시도하세요.",
+                    "error_code": "UNAUTHORIZED"
+                })
+                return
+
+            photo_id = path_parts[2]
+
+            try:
+                content_length = int(self.headers['Content-Length'])
+                post_data = self.rfile.read(content_length)
+                request_json = json.loads(post_data.decode('utf-8'))
+
+                print(f"📝 사진 메타데이터 수정 요청: {photo_id}")
+                print(f"👤 인증된 사용자: {user_data.get('user_id')}")
+                print(f"📄 수정 데이터: {request_json}")
+
+                # NoSQL 클라이언트로 메타데이터 업데이트
+                sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'shared'))
+                from nosql_client import OCINoSQLClient
+
+                nosql_client = OCINoSQLClient()
+
+                # 기존 사진 데이터 조회
+                existing_photo = nosql_client.get_photo(photo_id)
+                if not existing_photo:
+                    self.send_json_response(404, {
+                        "success": False,
+                        "message": "사진을 찾을 수 없습니다",
+                        "photo_id": photo_id
+                    })
+                    return
+
+                # 업데이트할 데이터 준비
+                update_data = existing_photo.copy()
+
+                # 요청에서 받은 필드들로 업데이트
+                if 'description' in request_json:
+                    update_data['description'] = request_json['description']
+                if 'travel_date' in request_json:
+                    update_data['travel_date'] = request_json['travel_date']
+                if 'location' in request_json:
+                    update_data['location'] = request_json['location']
+
+                # NoSQL에 업데이트 (기존 레코드 덮어쓰기)
+                result = nosql_client.save_photo_metadata(update_data)
+
+                if result.get('success', False):
+                    print(f"✅ 사진 메타데이터 수정 성공: {photo_id}")
+                    self.send_json_response(200, {
+                        "success": True,
+                        "message": "사진 정보가 성공적으로 수정되었습니다",
+                        "photo_id": photo_id,
+                        "updated_data": update_data
+                    })
+                else:
+                    print(f"❌ 사진 메타데이터 수정 실패: {result.get('message', 'Unknown error')}")
+                    self.send_json_response(500, {
+                        "success": False,
+                        "message": result.get('message', '업데이트 중 오류가 발생했습니다'),
+                        "photo_id": photo_id
+                    })
+
+            except json.JSONDecodeError:
+                self.send_json_response(400, {
+                    "success": False,
+                    "message": "잘못된 JSON 형식입니다."
+                })
+            except Exception as e:
+                print(f"❌ 사진 메타데이터 수정 중 오류: {str(e)}")
+                self.send_json_response(500, {
+                    "success": False,
+                    "message": f"서버 오류가 발생했습니다: {str(e)}",
+                    "photo_id": photo_id
+                })
+
+        else:
+            self.send_error(404, "Not Found")
+
     def do_DELETE(self):
         """DELETE 요청 처리"""
         parsed_path = urlparse(self.path)
