@@ -64,6 +64,13 @@
 - **우선순위 로직**: EXIF 촬영시간 > 사용자 입력 여행날짜 > 업로드 시간 순서로 적용
 - **스마트 fallback**: 촬영시간이 없는 사진에 자동으로 여행날짜(정오) 적용
 
+### OCI 안전 설정 및 배포 (2024-09-18)
+- **Compartment 보안**: `yeonghoon.kim` compartment만 사용 (루트 tenancy 사용 금지)
+- **검증 스크립트**: `backend/validate_compartment.py`로 잘못된 설정 자동 감지
+- **Object Storage**: `photolog-storage` 버킷 (`yeonghoon.kim` compartment에 생성)
+- **NoSQL Database**: `photos` 테이블 (`yeonghoon.kim` compartment에 생성)
+- **환경설정 보호**: .env 파일에 경고 주석 및 올바른 compartment ID 명시
+
 ## 개발 참고사항
 
 - 애플리케이션은 명시적인 위치 동의를 통해 사용자 개인정보를 우선 보호합니다

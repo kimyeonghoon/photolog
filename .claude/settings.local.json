@@ -40,7 +40,9 @@
       "Bash(npm run build:*)",
       "Bash(oci os bucket create:*)",
       "Bash(oci nosql table create:*)",
-      "Bash(export NOSQL_COMPARTMENT_ID=ocid1.compartment.oc1..aaaaaaaamhidad3wjjhfjymz25keyffye4ttg7upjvpvamnnajzmyraa2dyq)"
+      "Bash(export NOSQL_COMPARTMENT_ID=ocid1.compartment.oc1..aaaaaaaamhidad3wjjhfjymz25keyffye4ttg7upjvpvamnnajzmyraa2dyq)",
+      "Bash(chmod:*)",
+      "Bash(export NOSQL_COMPARTMENT_ID)"
     ],
     "deny": [],
     "ask": []
