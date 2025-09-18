@@ -31,6 +31,8 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
     if (isSelectionMode) {
       // 선택 모드에서는 사진 선택/해제
       const photo = sortedPhotos[index];
+      if (!photo.id) return;
+
       const newSelected = new Set(selectedPhotos);
       if (newSelected.has(photo.id)) {
         newSelected.delete(photo.id);
@@ -99,7 +101,7 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
       setSelectedPhotos(new Set());
     } else {
       // 전체 선택
-      const allPhotoIds = new Set(sortedPhotos.map(photo => photo.id));
+      const allPhotoIds = new Set(sortedPhotos.map(photo => photo.id).filter((id): id is string => id !== undefined));
       setSelectedPhotos(allPhotoIds);
     }
   };
@@ -447,7 +449,7 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
                 <div
                   key={index}
                   className={`photo-card ${isSelectionMode ? 'selection-mode' : ''} ${
-                    selectedPhotos.has(photo.id) ? 'selected' : ''
+                    photo.id && selectedPhotos.has(photo.id) ? 'selected' : ''
                   }`}
                   onClick={() => handlePhotoClick(index)}
                 >
@@ -466,7 +468,7 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
                     <div className="photo-overlay">
                       {isSelectionMode ? (
                         <div className="selection-checkbox">
-                          {selectedPhotos.has(photo.id) ? '✅' : '⬜'}
+                          {photo.id && selectedPhotos.has(photo.id) ? '✅' : '⬜'}
                         </div>
                       ) : (
                         <span className="overlay-icon">🔍</span>

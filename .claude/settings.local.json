@@ -36,7 +36,8 @@
       "Bash(source:*)",
       "Bash(pip install:*)",
       "Bash(npm install)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []

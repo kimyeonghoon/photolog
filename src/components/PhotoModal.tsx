@@ -156,7 +156,7 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
   };
 
   const handleDeleteConfirm = async () => {
-    if (!photo || !onDelete) return;
+    if (!photo || !onDelete || !photo.id) return;
 
     setIsDeleting(true);
     try {
@@ -192,7 +192,7 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
 
   // 변경사항 저장
   const handleSaveChanges = async () => {
-    if (!photo || !onUpdatePhoto) return;
+    if (!photo || !onUpdatePhoto || !photo.id) return;
 
     setIsSaving(true);
     try {
