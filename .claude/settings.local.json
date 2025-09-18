@@ -29,7 +29,14 @@
       "Bash(sudo fuser:*)",
       "Bash(export OCI_REGION=ap-chuncheon-1)",
       "Bash(export NOSQL_TABLE_NAME=photos)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Read(//tmp/**)",
+      "Bash(export PYTHONPATH=.)",
+      "Bash(python:*)",
+      "Bash(source:*)",
+      "Bash(pip install:*)",
+      "Bash(npm install)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []
