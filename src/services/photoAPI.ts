@@ -6,7 +6,9 @@
 import { authAPI } from './authAPI'
 
 // API 설정
-const API_BASE_URL = 'http://localhost:8001';
+const API_BASE_URL = window.location.hostname === 'localhost'
+  ? 'http://localhost:8001'
+  : `${window.location.protocol}//${window.location.host}`;
 
 // 통합 스토리지 서비스 사용 여부 (환경변수로 제어)
 const USE_UNIFIED_STORAGE = true;

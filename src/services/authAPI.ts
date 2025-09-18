@@ -3,7 +3,9 @@
  * 텔레그램 봇 기반 2FA 인증 시스템
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001'
+const API_BASE_URL = window.location.hostname === 'localhost'
+  ? 'http://localhost:8001'
+  : `${window.location.protocol}//${window.location.host}`
 
 export interface LoginRequest {
   email: string
