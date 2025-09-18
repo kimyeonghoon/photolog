@@ -71,10 +71,50 @@
 - **NoSQL Database**: `photos` 테이블 (`yeonghoon.kim` compartment에 생성)
 - **환경설정 보호**: .env 파일에 경고 주석 및 올바른 compartment ID 명시
 
+### 사진 메타데이터 수정 기능 수정 (2024-09-18)
+- **필드명 통일**: 프론트엔드-백엔드 간 `timestamp` → `travel_date`로 일관성 개선
+- **백엔드 Import 오류 수정**: NoSQL 클라이언트 상대 import 문제 해결
+- **타입 정의 개선**: TypeScript 인터페이스 일관성 유지
+- **API 호출 안정화**: PUT 엔드포인트 JSON 파싱 및 인증 플로우 개선
+
+### CORS 문제 해결 및 지오코딩 개선 (2024-09-18)
+- **지오코딩 프록시**: OpenStreetMap Nominatim API CORS 우회를 위한 백엔드 프록시 구현
+- **한국 지역 Fallback**: 좌표 기반 한국 지역 감지 및 한국어 지역명 제공
+- **네트워크 오류 처리**: 지오코딩 실패 시 좌표 표시로 graceful fallback
+- **캐싱 시스템**: 24시간 지속되는 위치 정보 캐시로 성능 개선
+
+### 프로덕션 환경 검증 (2024-09-18)
+- **완전한 인증 플로우**: 텔레그램 봇 기반 2FA 시스템 프로덕션 검증
+- **API 엔드포인트 테스트**: 모든 CRUD 작업의 인증 및 권한 검증 완료
+- **32개 사진 데이터**: 실제 여행 사진들이 정상적으로 저장 및 표시됨
+- **Oracle Cloud 연동**: Object Storage 및 NoSQL DB 정상 작동 확인
+
 ## 개발 참고사항
 
+### 보안 및 개인정보 보호
 - 애플리케이션은 명시적인 위치 동의를 통해 사용자 개인정보를 우선 보호합니다
-- 더 나은 성능을 위해 EXIF 데이터 처리는 클라이언트 측에서 수행됩니다
-- 서버리스 아키텍처는 확장성과 비용 효율성을 보장합니다
-- UI 요소에 한국어 지원이 필요할 수 있습니다
+- 텔레그램 봇 기반 2FA 시스템으로 강력한 인증 보안 구현
 - 위치 기반 기능은 개인정보 보호 규정을 신중하게 처리해야 합니다
+
+### 성능 최적화
+- 더 나은 성능을 위해 EXIF 데이터 처리는 클라이언트 측에서 수행됩니다
+- 지오코딩 결과 24시간 캐싱으로 API 호출 최소화
+- 썸네일 생성을 통한 효율적인 이미지 로딩
+
+### 아키텍처
+- 서버리스 아키텍처는 확장성과 비용 효율성을 보장합니다
+- Oracle Cloud Infrastructure 완전 활용 (Object Storage, NoSQL DB)
+- 프론트엔드-백엔드 API 일관성 유지 (필드명 통일)
+
+### 국제화 및 접근성
+- UI 요소에 한국어 지원 완료
+- 한국 지역 좌표 기반 지역명 제공
+- 안드로이드 크롬의 GPS 메타데이터 제거는 정상적인 보안 기능
+
+### 기술 스택
+- **Frontend**: React + TypeScript + Vite
+- **Backend**: Python + OCI Functions
+- **Database**: OCI NoSQL Database
+- **Storage**: OCI Object Storage
+- **Authentication**: 텔레그램 봇 + JWT
+- **Maps**: Leaflet + OpenStreetMap
