@@ -420,7 +420,7 @@ def search_photos_by_location(latitude: float, longitude: float, radius_km: floa
 
 def get_photo_list(limit: int = 20, page: str = None, order_by: str = 'upload_timestamp', order: str = 'DESC') -> dict:
     """
-    사진 목록 조회 API 함수 (NoSQL Database 사용)
+    사진 목록 조회 API 함수 (Database 사용)
 
     Args:
         limit: 조회할 사진 수
@@ -435,14 +435,14 @@ def get_photo_list(limit: int = 20, page: str = None, order_by: str = 'upload_ti
         storage_type = os.getenv('STORAGE_TYPE', 'OCI')
         service = UnifiedStorageService(storage_type)
 
-        # NoSQL 클라이언트가 있는 경우 NoSQL에서 조회
-        if hasattr(service, 'nosql_client') and service.nosql_client:
-            print(f"📋 NoSQL에서 사진 목록 조회 중... (limit: {limit})")
-            result = service.nosql_client.list_photos(limit=limit, page=page, order_by=order_by, order=order)
+        # 데이터베이스 클라이언트가 있는 경우 데이터베이스에서 조회
+        if hasattr(service, 'db_client') and service.db_client:
+            print(f"📋 데이터베이스에서 사진 목록 조회 중... (limit: {limit})")
+            result = service.db_client.list_photos(limit=limit, page=page, order_by=order_by, order=order)
 
             if result['success']:
                 photos = result['photos']
-                print(f"✅ NoSQL에서 {len(photos)}개 사진 조회 성공")
+                print(f"✅ 데이터베이스에서 {len(photos)}개 사진 조회 성공")
 
                 # API 응답 형식으로 변환
                 formatted_photos = []
@@ -470,13 +470,13 @@ def get_photo_list(limit: int = 20, page: str = None, order_by: str = 'upload_ti
 
                 return create_api_response(200, response_data, "사진 목록 조회 성공")
             else:
-                print(f"❌ NoSQL 조회 실패: {result.get('error')}")
-                # NoSQL 실패 시 Object Storage에서 조회
+                print(f"❌ 데이터베이스 조회 실패: {result.get('error')}")
+                # 데이터베이스 실패 시 Object Storage에서 조회
                 return get_photo_list_from_storage(service, limit)
 
         else:
-            print("📦 NoSQL 클라이언트가 없어서 Object Storage에서 조회")
-            # NoSQL이 없는 경우 Object Storage에서 직접 조회
+            print("📦 데이터베이스 클라이언트가 없어서 Object Storage에서 조회")
+            # 데이터베이스가 없는 경우 Object Storage에서 직접 조회
             return get_photo_list_from_storage(service, limit)
 
     except Exception as e:
@@ -523,7 +523,7 @@ def get_photo_list_from_storage(service, limit: int) -> dict:
 def delete_photo(photo_id: str) -> dict:
     """
     사진 삭제 API 함수
-    NoSQL 메타데이터와 Object Storage의 파일들(원본 + 썸네일)을 모두 삭제
+    데이터베이스 메타데이터와 Object Storage의 파일들(원본 + 썸네일)을 모두 삭제
 
     Args:
         photo_id: 삭제할 사진의 ID
@@ -536,11 +536,11 @@ def delete_photo(photo_id: str) -> dict:
         storage_type = os.getenv('STORAGE_TYPE', 'OCI')
         service = UnifiedStorageService(storage_type)
 
-        # 1. NoSQL에서 사진 메타데이터 조회 (삭제 전에 썸네일 정보 확인용)
+        # 1. 데이터베이스에서 사진 메타데이터 조회 (삭제 전에 썸네일 정보 확인용)
         photo_metadata = None
-        if hasattr(service, 'nosql_client') and service.nosql_client:
+        if hasattr(service, 'db_client') and service.db_client:
             try:
-                photo_metadata = service.nosql_client.get_photo_metadata(photo_id)
+                photo_metadata = service.db_client.get_photo_metadata(photo_id)
                 if not photo_metadata:
                     return {
                         'success': False,
@@ -579,21 +579,21 @@ def delete_photo(photo_id: str) -> dict:
             except Exception as e:
                 print(f"⚠️ 썸네일 삭제 중 오류 (무시): {thumbnail_key} - {e}")
 
-        # 3. NoSQL에서 메타데이터 삭제
-        if hasattr(service, 'nosql_client') and service.nosql_client:
+        # 3. 데이터베이스에서 메타데이터 삭제
+        if hasattr(service, 'db_client') and service.db_client:
             try:
-                nosql_delete_result = service.nosql_client.delete_photo_metadata(photo_id)
-                if nosql_delete_result.get('success', False):
-                    print(f"✅ NoSQL 메타데이터 삭제 성공: {photo_id}")
-                    deletion_results.append(f"메타데이터: NoSQL")
+                db_delete_result = service.db_client.delete_photo_metadata(photo_id)
+                if db_delete_result.get('success', False):
+                    print(f"✅ 데이터베이스 메타데이터 삭제 성공: {photo_id}")
+                    deletion_results.append(f"메타데이터: 데이터베이스")
                 else:
-                    print(f"❌ NoSQL 메타데이터 삭제 실패: {nosql_delete_result.get('error', 'Unknown error')}")
+                    print(f"❌ 데이터베이스 메타데이터 삭제 실패: {db_delete_result.get('error', 'Unknown error')}")
                     return {
                         'success': False,
-                        'message': f'메타데이터 삭제 실패: {nosql_delete_result.get("error", "Unknown error")}'
+                        'message': f'메타데이터 삭제 실패: {db_delete_result.get("error", "Unknown error")}'
                     }
             except Exception as e:
-                print(f"❌ NoSQL 삭제 중 오류: {e}")
+                print(f"❌ 데이터베이스 삭제 중 오류: {e}")
                 return {
                     'success': False,
                     'message': f'메타데이터 삭제 중 오류: {str(e)}'

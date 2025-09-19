@@ -10,7 +10,7 @@ from typing import Dict, Any, Optional, List, Union
 from datetime import datetime
 from .config import Config
 from .utils import get_current_timestamp
-from .nosql_client import OCINoSQLClient
+from .database_client import get_database_client
 
 
 class StorageInterface(ABC):
@@ -283,13 +283,12 @@ class UnifiedStorageService:
         self.storage = StorageServiceFactory.create_storage_service(storage_type)
         self.storage_type = type(self.storage).__name__
 
-        # NoSQL 클라이언트 초기화 (OCI 환경에서만)
-        self.nosql_client = None
+        # 데이터베이스 클라이언트 초기화
+        self.db_client = None
         try:
-            if storage_type and storage_type.upper() == 'OCI':
-                self.nosql_client = OCINoSQLClient()
+            self.db_client = get_database_client()
         except Exception as e:
-            print(f"NoSQL 클라이언트 초기화 실패: {e}")
+            print(f"데이터베이스 클라이언트 초기화 실패: {e}")
 
     def upload_photo(
         self,
@@ -397,10 +396,10 @@ class UnifiedStorageService:
                 "upload_details": results
             }
 
-            # NoSQL에 메타데이터 저장 (OCI 환경에서만)
-            if self.nosql_client:
+            # 데이터베이스에 메타데이터 저장
+            if self.db_client:
                 try:
-                    nosql_data = {
+                    db_data = {
                         "id": photo_id,  # PRIMARY KEY를 id로 변경
                         "filename": f"{photo_id}{file_extension}",
                         "description": metadata.get("description", "") if metadata else "",
@@ -413,15 +412,15 @@ class UnifiedStorageService:
                         "tags": metadata.get("tags", []) if metadata else []
                     }
 
-                    nosql_result = self.nosql_client.save_photo_metadata(nosql_data)
-                    upload_result["nosql_saved"] = nosql_result["success"]
+                    db_result = self.db_client.save_photo_metadata(db_data)
+                    upload_result["db_saved"] = db_result["success"]
 
-                    if not nosql_result["success"]:
-                        print(f"NoSQL 저장 실패: {nosql_result.get('error')}")
+                    if not db_result["success"]:
+                        print(f"데이터베이스 저장 실패: {db_result.get('error')}")
 
                 except Exception as e:
-                    print(f"NoSQL 저장 중 오류: {e}")
-                    upload_result["nosql_saved"] = False
+                    print(f"데이터베이스 저장 중 오류: {e}")
+                    upload_result["db_saved"] = False
 
             return upload_result
 
@@ -531,11 +530,11 @@ class UnifiedStorageService:
         Returns:
             사진 메타데이터 또는 None
         """
-        if not self.nosql_client:
+        if not self.db_client:
             return None
 
         try:
-            return self.nosql_client.get_photo_metadata(photo_id)
+            return self.db_client.get_photo_metadata(photo_id)
         except Exception as e:
             print(f"사진 메타데이터 조회 오류: {e}")
             return None
@@ -559,16 +558,16 @@ class UnifiedStorageService:
         Returns:
             검색된 사진 목록
         """
-        if not self.nosql_client:
+        if not self.db_client:
             return {
                 "success": False,
-                "error": "NoSQL 클라이언트가 초기화되지 않았습니다",
+                "error": "데이터베이스 클라이언트가 초기화되지 않았습니다",
                 "photos": [],
                 "search_params": None
             }
 
         try:
-            return self.nosql_client.search_photos_by_location(latitude, longitude, radius_km, limit)
+            return self.db_client.search_photos_by_location(latitude, longitude, radius_km, limit)
         except Exception as e:
             return {
                 "success": False,

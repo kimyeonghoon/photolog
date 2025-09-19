@@ -102,6 +102,13 @@ backend/tests/debug_*.py
 backend/tests/test_nosql_setup.py
 backend/tests/query_nosql_data.py
 
+# MySQL migration test files (contain sensitive connection info)
+backend/test_mysql_*.py
+
+# Database dumps (may contain sensitive data)
+backend/*.sql
+backend/**/*.sql
+
 # Test images
 public/test_image.jpg
 public/test_*.jpg

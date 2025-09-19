@@ -14,5 +14,8 @@ requests==2.31.0
 # JWT 토큰 처리
 PyJWT==2.8.0
 
+# MySQL 데이터베이스
+PyMySQL==1.1.0
+
 # 개발 및 디버깅
 python-dotenv==1.0.0

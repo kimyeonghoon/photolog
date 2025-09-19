@@ -370,7 +370,7 @@ class PhotoAPIHandler(BaseHTTPRequestHandler):
                 print(f"👤 인증된 사용자: {user_data.get('user_id')}")
                 print(f"📄 수정 데이터: {request_json}")
 
-                # NoSQL 클라이언트로 메타데이터 업데이트
+                # 데이터베이스 클라이언트로 메타데이터 업데이트
                 import sys
                 import os
                 shared_path = os.path.join(os.path.dirname(__file__), '..', 'shared')
@@ -378,19 +378,19 @@ class PhotoAPIHandler(BaseHTTPRequestHandler):
                     sys.path.insert(0, shared_path)
 
                 try:
-                    from nosql_client import OCINoSQLClient
+                    from database_client import get_database_client
                 except ImportError:
                     # Fallback import method
                     import importlib.util
-                    spec = importlib.util.spec_from_file_location("nosql_client", os.path.join(shared_path, "nosql_client.py"))
-                    nosql_client_module = importlib.util.module_from_spec(spec)
-                    spec.loader.exec_module(nosql_client_module)
-                    OCINoSQLClient = nosql_client_module.OCINoSQLClient
+                    spec = importlib.util.spec_from_file_location("database_client", os.path.join(shared_path, "database_client.py"))
+                    database_client_module = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(database_client_module)
+                    get_database_client = database_client_module.get_database_client
 
-                nosql_client = OCINoSQLClient()
+                db_client = get_database_client()
 
                 # 기존 사진 데이터 조회
-                existing_photo = nosql_client.get_photo(photo_id)
+                existing_photo = db_client.get_photo_metadata(photo_id)
                 if not existing_photo:
                     self.send_json_response(404, {
                         "success": False,
@@ -410,8 +410,8 @@ class PhotoAPIHandler(BaseHTTPRequestHandler):
                 if 'location' in request_json:
                     update_data['location'] = request_json['location']
 
-                # NoSQL에 업데이트 (기존 레코드 덮어쓰기)
-                result = nosql_client.save_photo_metadata(update_data)
+                # 데이터베이스에 업데이트 (기존 레코드 덮어쓰기)
+                result = db_client.save_photo_metadata(update_data)
 
                 if result.get('success', False):
                     print(f"✅ 사진 메타데이터 수정 성공: {photo_id}")

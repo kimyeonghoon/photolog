@@ -89,6 +89,14 @@
 - **32개 사진 데이터**: 실제 여행 사진들이 정상적으로 저장 및 표시됨
 - **Oracle Cloud 연동**: Object Storage 및 NoSQL DB 정상 작동 확인
 
+### MySQL 데이터베이스 마이그레이션 (2024-09-19)
+- **완전한 MySQL 지원**: NoSQL에서 MySQL/MariaDB로 데이터베이스 마이그레이션 완료
+- **데이터베이스 클라이언트 팩토리**: 환경변수로 MySQL/NoSQL 전환 가능한 아키텍처 구현
+- **성능 최적화**: 공간 인덱스 및 하버사인 공식을 사용한 위치 기반 검색 개선
+- **API 호환성**: 기존 REST API 엔드포인트 완전 호환성 유지
+- **1.1MB 프로덕션 데이터**: 32개 사진 메타데이터가 MySQL 덤프로 준비 완료
+- **개발자 도구**: 마이그레이션 가이드, 테스트 스크립트, 환경 설정 예제 제공
+
 ## 개발 참고사항
 
 ### 보안 및 개인정보 보호
@@ -103,7 +111,7 @@
 
 ### 아키텍처
 - 서버리스 아키텍처는 확장성과 비용 효율성을 보장합니다
-- Oracle Cloud Infrastructure 완전 활용 (Object Storage, NoSQL DB)
+- 하이브리드 클라우드: Object Storage (OCI) + Database (MySQL/NoSQL 선택 가능)
 - 프론트엔드-백엔드 API 일관성 유지 (필드명 통일)
 
 ### 국제화 및 접근성
@@ -114,7 +122,7 @@
 ### 기술 스택
 - **Frontend**: React + TypeScript + Vite
 - **Backend**: Python + OCI Functions
-- **Database**: OCI NoSQL Database
+- **Database**: MySQL/MariaDB (마이그레이션 완료) + OCI NoSQL Database (레거시)
 - **Storage**: OCI Object Storage
 - **Authentication**: 텔레그램 봇 + JWT
 - **Maps**: Leaflet + OpenStreetMap
