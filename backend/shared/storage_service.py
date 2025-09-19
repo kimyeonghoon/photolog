@@ -425,13 +425,13 @@ class UnifiedStorageService:
                         "location_country": location_data.get("country") if location_data else None,
 
                         # EXIF 정보 (개별 컬럼)
-                        "camera_make": exif_data.get("make"),
-                        "camera_model": exif_data.get("model"),
-                        "taken_timestamp": exif_data.get("datetime"),
-                        "iso_speed": exif_data.get("iso"),
-                        "aperture": exif_data.get("aperture"),
-                        "shutter_speed": exif_data.get("shutter_speed"),
-                        "focal_length": exif_data.get("focal_length"),
+                        "camera_make": exif_data.get("make") if exif_data else None,
+                        "camera_model": exif_data.get("model") if exif_data else None,
+                        "taken_timestamp": exif_data.get("datetime") if exif_data else None,
+                        "iso_speed": exif_data.get("iso") if exif_data else None,
+                        "aperture": exif_data.get("aperture") if exif_data else None,
+                        "shutter_speed": exif_data.get("shutter_speed") if exif_data else None,
+                        "focal_length": exif_data.get("focal_length") if exif_data else None,
 
                         # JSON 컬럼들 (호환성을 위해)
                         "thumbnail_urls": thumbnail_urls,
