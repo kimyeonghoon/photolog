@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  photolog-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: photolog-backend-container
+    ports:
+      - "8001:8001"
+    env_file:
+      - ./.env
+    volumes:
+      - ~/.oci:/root/.oci:ro  # OCI 설정 파일 마운트
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  default:
+    name: photolog-network
+    driver: bridge
