@@ -399,16 +399,44 @@ class UnifiedStorageService:
             # 데이터베이스에 메타데이터 저장
             if self.db_client:
                 try:
+                    # MySQL 스키마에 맞게 데이터 변환
+                    location_data = metadata.get("location") if metadata else None
+                    exif_data = metadata.get("exif_data") if metadata else {}
+
                     db_data = {
-                        "id": photo_id,  # PRIMARY KEY를 id로 변경
+                        "id": photo_id,
                         "filename": f"{photo_id}{file_extension}",
                         "description": metadata.get("description", "") if metadata else "",
                         "file_url": original_result["url"],
-                        "thumbnail_urls": thumbnail_urls,
                         "file_size": len(file_content),
+                        "content_type": f"image/{file_extension[1:]}",
                         "upload_timestamp": get_current_timestamp(),
-                        "location": metadata.get("location") if metadata else None,
-                        "exif_data": metadata.get("exif_data") if metadata else None,
+
+                        # 개별 썸네일 URL 컬럼들
+                        "thumbnail_small": thumbnail_urls.get("small"),
+                        "thumbnail_medium": thumbnail_urls.get("medium"),
+                        "thumbnail_large": thumbnail_urls.get("large"),
+
+                        # 위치 정보 (개별 컬럼)
+                        "latitude": location_data.get("latitude") if location_data else None,
+                        "longitude": location_data.get("longitude") if location_data else None,
+                        "location_address": location_data.get("address") if location_data else None,
+                        "location_city": location_data.get("city") if location_data else None,
+                        "location_country": location_data.get("country") if location_data else None,
+
+                        # EXIF 정보 (개별 컬럼)
+                        "camera_make": exif_data.get("make"),
+                        "camera_model": exif_data.get("model"),
+                        "taken_timestamp": exif_data.get("datetime"),
+                        "iso_speed": exif_data.get("iso"),
+                        "aperture": exif_data.get("aperture"),
+                        "shutter_speed": exif_data.get("shutter_speed"),
+                        "focal_length": exif_data.get("focal_length"),
+
+                        # JSON 컬럼들 (호환성을 위해)
+                        "thumbnail_urls": thumbnail_urls,
+                        "location": location_data,
+                        "exif_data": exif_data,
                         "tags": metadata.get("tags", []) if metadata else []
                     }
 
