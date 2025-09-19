@@ -286,7 +286,8 @@ class MySQLClient:
                         "total_count": total_count,
                         "count": len(photos),
                         "limit": limit
-                    }
+                    },
+                    "has_more": next_page is not None  # 프론트엔드 호환성을 위한 필드 추가
                 }
 
         except Exception as e:
