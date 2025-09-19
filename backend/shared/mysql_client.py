@@ -250,6 +250,16 @@ class MySQLClient:
                     # photo_id 매핑 (NoSQL 호환성)
                     photo_data['photo_id'] = photo_data['id']
 
+                    # datetime 필드 문자열 변환 (JSON 직렬화를 위해)
+                    datetime_fields = ['upload_timestamp', 'taken_timestamp']
+                    for field in datetime_fields:
+                        if photo_data.get(field) and hasattr(photo_data[field], 'isoformat'):
+                            photo_data[field] = photo_data[field].isoformat()
+
+                    # date 필드 문자열 변환
+                    if photo_data.get('travel_date') and hasattr(photo_data['travel_date'], 'isoformat'):
+                        photo_data['travel_date'] = photo_data['travel_date'].isoformat()
+
                     # JSON 필드 파싱
                     if photo_data.get('thumbnail_urls_json'):
                         photo_data['thumbnail_urls'] = json.loads(photo_data['thumbnail_urls_json'])
