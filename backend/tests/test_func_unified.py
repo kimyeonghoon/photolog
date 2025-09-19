@@ -617,5 +617,41 @@ def delete_photo(photo_id: str) -> dict:
         }
 
 
+def get_photo_stats() -> dict:
+    """
+    사진 통계 조회 API 함수
+
+    Returns:
+        dict: 전체 사진 통계 정보
+    """
+    try:
+        storage_type = os.getenv('STORAGE_TYPE', 'OCI')
+        service = UnifiedStorageService(storage_type)
+
+        # 데이터베이스 클라이언트가 있는 경우 데이터베이스에서 통계 조회
+        if hasattr(service, 'db_client') and service.db_client:
+            print("📊 데이터베이스에서 사진 통계 조회 중...")
+            result = service.db_client.get_stats()
+
+            if result['success']:
+                stats = result['stats']
+                print(f"✅ 통계 조회 성공:")
+                print(f"   총 사진: {stats['total_photos']}장")
+                print(f"   위치 정보: {stats['photos_with_location']}장 ({stats['location_percentage']}%)")
+                print(f"   설명 있음: {stats['photos_with_description']}장 ({stats['description_percentage']}%)")
+                print(f"   이번 달: {stats['this_month_photos']}장")
+                print(f"   총 용량: {stats['total_size']} bytes")
+
+                return create_api_response(200, stats, "통계 조회 성공")
+            else:
+                return create_api_response(500, None, f"통계 조회 실패: {result.get('error')}")
+        else:
+            return create_api_response(500, None, "데이터베이스 클라이언트를 사용할 수 없습니다")
+
+    except Exception as e:
+        print(f"❌ 통계 조회 중 오류: {str(e)}")
+        return create_api_response(500, None, f"통계 조회 중 오류: {str(e)}")
+
+
 if __name__ == "__main__":
     main_test()

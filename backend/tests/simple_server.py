@@ -69,6 +69,7 @@ class PhotoAPIHandler(BaseHTTPRequestHandler):
                     "/api/photos/upload",
                     "/api/photos/upload-unified",
                     "/api/photos",
+                    "/api/photos/stats",
                     "/api/photos/{id}",
                     "/storage/*"
                 ]
@@ -102,6 +103,21 @@ class PhotoAPIHandler(BaseHTTPRequestHandler):
                     "message": f"Photo list error: {str(e)}"
                 }
                 self.send_json_response(500, error_response)
+
+        elif parsed_path.path == '/api/photos/stats':
+            # 사진 통계 조회
+            try:
+                from test_func_unified import get_photo_stats
+                result = get_photo_stats()
+                self.send_json_response(200, result)
+            except Exception as e:
+                error_response = {
+                    "success": False,
+                    "message": f"사진 통계 조회 실패: {str(e)}",
+                    "error": str(e)
+                }
+                self.send_json_response(500, error_response)
+
         elif parsed_path.path == '/api/geocoding/reverse':
             # 지오코딩 프록시 엔드포인트
             query_params = parse_qs(parsed_path.query)

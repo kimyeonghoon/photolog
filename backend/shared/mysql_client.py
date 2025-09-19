@@ -298,6 +298,98 @@ class MySQLClient:
                 "page_info": None
             }
 
+    def get_stats(self) -> Dict[str, Any]:
+        """
+        전체 사진 통계 조회
+
+        Returns:
+            통계 정보
+        """
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor(pymysql.cursors.DictCursor)
+
+                # 기본 통계 조회
+                stats_sql = """
+                SELECT
+                    COUNT(*) as total_photos,
+                    COUNT(CASE WHEN latitude IS NOT NULL AND longitude IS NOT NULL THEN 1 END) as photos_with_location,
+                    COUNT(CASE WHEN description IS NOT NULL AND description != '' THEN 1 END) as photos_with_description,
+                    COALESCE(SUM(file_size), 0) as total_size,
+                    MIN(COALESCE(taken_timestamp, upload_timestamp)) as first_photo_date,
+                    MAX(COALESCE(taken_timestamp, upload_timestamp)) as latest_photo_date
+                FROM photos
+                """
+                cursor.execute(stats_sql)
+                basic_stats = cursor.fetchone()
+
+                # 이번 달 사진 수 조회
+                this_month_sql = """
+                SELECT COUNT(*) as this_month_photos
+                FROM photos
+                WHERE YEAR(upload_timestamp) = YEAR(CURDATE())
+                AND MONTH(upload_timestamp) = MONTH(CURDATE())
+                """
+                cursor.execute(this_month_sql)
+                this_month_stats = cursor.fetchone()
+
+                # 월별 통계 (최근 12개월)
+                monthly_sql = """
+                SELECT
+                    YEAR(upload_timestamp) as year,
+                    MONTH(upload_timestamp) as month,
+                    COUNT(*) as count
+                FROM photos
+                WHERE upload_timestamp >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
+                GROUP BY YEAR(upload_timestamp), MONTH(upload_timestamp)
+                ORDER BY year DESC, month DESC
+                """
+                cursor.execute(monthly_sql)
+                monthly_stats = cursor.fetchall()
+
+                # 결과 정리
+                total_photos = basic_stats['total_photos']
+                photos_with_location = basic_stats['photos_with_location']
+                photos_with_description = basic_stats['photos_with_description']
+
+                # datetime 객체를 문자열로 변환
+                first_photo_date = basic_stats['first_photo_date']
+                latest_photo_date = basic_stats['latest_photo_date']
+
+                if first_photo_date and hasattr(first_photo_date, 'isoformat'):
+                    first_photo_date = first_photo_date.isoformat()
+                if latest_photo_date and hasattr(latest_photo_date, 'isoformat'):
+                    latest_photo_date = latest_photo_date.isoformat()
+
+                return {
+                    "success": True,
+                    "stats": {
+                        "total_photos": total_photos,
+                        "photos_with_location": photos_with_location,
+                        "photos_with_description": photos_with_description,
+                        "this_month_photos": this_month_stats['this_month_photos'],
+                        "total_size": basic_stats['total_size'],
+                        "first_photo_date": first_photo_date,
+                        "latest_photo_date": latest_photo_date,
+                        "location_percentage": round((photos_with_location / total_photos) * 100) if total_photos > 0 else 0,
+                        "description_percentage": round((photos_with_description / total_photos) * 100) if total_photos > 0 else 0,
+                        "monthly_stats": [
+                            {
+                                "year": stat["year"],
+                                "month": stat["month"],
+                                "count": stat["count"]
+                            } for stat in monthly_stats
+                        ]
+                    }
+                }
+
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "stats": None
+            }
+
     def search_photos_by_location(
         self,
         latitude: float,
