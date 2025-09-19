@@ -224,10 +224,14 @@ class MySQLClient:
                 page_num = int(page) if page and page.isdigit() else 1
                 offset = (page_num - 1) * limit
 
-                # 유효한 정렬 컬럼 검증
-                valid_columns = ['upload_timestamp', 'taken_timestamp', 'travel_date', 'filename']
-                if order_by not in valid_columns:
-                    order_by = 'upload_timestamp'
+                # 유효한 정렬 컬럼 검증 및 특별 처리
+                if order_by.startswith('COALESCE('):
+                    # EXIF 촬영시간 우선 정렬: taken_timestamp가 있으면 사용, 없으면 upload_timestamp
+                    order_by = 'COALESCE(taken_timestamp, upload_timestamp)'
+                else:
+                    valid_columns = ['upload_timestamp', 'taken_timestamp', 'travel_date', 'filename']
+                    if order_by not in valid_columns:
+                        order_by = 'upload_timestamp'
 
                 order = 'DESC' if order.upper() == 'DESC' else 'ASC'
 
@@ -266,6 +270,9 @@ class MySQLClient:
 
                     if photo_data.get('location_json'):
                         photo_data['location'] = json.loads(photo_data['location_json'])
+
+                    if photo_data.get('exif_data_json'):
+                        photo_data['exif_data'] = json.loads(photo_data['exif_data_json'])
 
                     if photo_data.get('tags'):
                         photo_data['tags'] = json.loads(photo_data['tags']) if isinstance(photo_data['tags'], str) else photo_data['tags']
