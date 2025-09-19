@@ -79,8 +79,17 @@ class PhotoAPIHandler(BaseHTTPRequestHandler):
             query_params = parse_qs(parsed_path.query)
             limit = int(query_params.get('limit', ['20'])[0])
             page = query_params.get('page', [None])[0]
+            offset = query_params.get('offset', [None])[0]
             order_by = query_params.get('order_by', ['upload_timestamp'])[0]
             order = query_params.get('order', ['DESC'])[0]
+
+            # offset이 제공된 경우 page로 변환 (프론트엔드 호환성)
+            if offset is not None and page is None:
+                try:
+                    offset_int = int(offset)
+                    page = str((offset_int // limit) + 1)
+                except (ValueError, ZeroDivisionError):
+                    page = "1"
 
             try:
                 from test_func_unified import get_photo_list
