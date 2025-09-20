@@ -712,6 +712,31 @@
   100% { transform: rotate(360deg); }
 }
 
+/* 무한스크롤 트리거 영역 */
+.load-more-trigger {
+  display: flex;
+  justify-content: center;
+  margin: 40px 0;
+  min-height: 100px;
+  align-items: center;
+}
+
+.loading-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 32px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  min-width: 200px;
+  justify-content: center;
+  opacity: 0.8;
+}
+
 /* Tablet Responsive */
 @media (min-width: 769px) and (max-width: 1024px) {
   .photos-grid {

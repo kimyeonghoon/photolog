@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { PhotoModal } from '../components/PhotoModal';
 import { StatsChart } from '../components/StatsChart';
 import { LocationDisplay } from '../components/LocationDisplay';
@@ -44,6 +44,34 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedPhotos, setSelectedPhotos] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // 무한스크롤을 위한 ref
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  // 무한스크롤 IntersectionObserver 설정
+  useEffect(() => {
+    if (!pagination?.hasMore || pagination.isLoadingMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const target = entries[0];
+        if (target.isIntersecting && pagination.onLoadMore) {
+          pagination.onLoadMore();
+        }
+      },
+      { threshold: 0.1, rootMargin: '100px' }
+    );
+
+    if (loadMoreRef.current) {
+      observer.observe(loadMoreRef.current);
+    }
+
+    return () => {
+      if (loadMoreRef.current) {
+        observer.unobserve(loadMoreRef.current);
+      }
+    };
+  }, [pagination?.hasMore, pagination?.isLoadingMore, pagination?.onLoadMore]);
 
   const handlePhotoClick = (index: number) => {
     if (isSelectionMode) {
@@ -585,26 +613,15 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
               ))}
             </div>
 
-            {/* 더 보기 버튼 */}
+            {/* 무한스크롤 트리거 영역 */}
             {pagination && pagination.hasMore && (
-              <div className="load-more-section">
-                <button
-                  onClick={pagination.onLoadMore}
-                  disabled={pagination.isLoadingMore}
-                  className="btn btn-secondary load-more-btn"
-                >
-                  {pagination.isLoadingMore ? (
-                    <>
-                      <span className="loading-spinner">⏳</span>
-                      추가 사진 불러오는 중...
-                    </>
-                  ) : (
-                    <>
-                      <span className="button-icon">⬇️</span>
-                      더 많은 사진 보기
-                    </>
-                  )}
-                </button>
+              <div ref={loadMoreRef} className="load-more-trigger">
+                {pagination.isLoadingMore && (
+                  <div className="loading-indicator">
+                    <span className="loading-spinner">⏳</span>
+                    추가 사진 불러오는 중...
+                  </div>
+                )}
               </div>
             )}
           </div>
