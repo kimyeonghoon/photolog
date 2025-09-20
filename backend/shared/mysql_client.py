@@ -208,6 +208,12 @@ class MySQLClient:
                     # photo_id 매핑 (NoSQL 호환성)
                     result['photo_id'] = result['id']
 
+                    # Decimal 타입을 float로 변환 (JSON 직렬화 오류 방지)
+                    from decimal import Decimal
+                    for key, value in result.items():
+                        if isinstance(value, Decimal):
+                            result[key] = float(value)
+
                     # JSON 필드 파싱
                     if result.get('thumbnail_urls_json'):
                         result['thumbnail_urls'] = json.loads(result['thumbnail_urls_json'])
