@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { PhotoModal } from '../components/PhotoModal';
 import { StatsChart } from '../components/StatsChart';
 import { LocationDisplay } from '../components/LocationDisplay';
+import LocationDistribution from '../components/LocationDistribution';
 import { PageHeader } from '../components/PageHeader';
 import { deleteSinglePhoto, deleteMultiplePhotos, updatePhoto } from '../services/photoAPI';
 import type { UnifiedPhotoData } from '../types';
@@ -35,9 +36,10 @@ interface HomePageProps {
   } | null;
   sortOrder?: 'newest' | 'oldest';
   onSortOrderChange?: (order: 'newest' | 'oldest') => void;
+  authToken?: string | null;
 }
 
-export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMapClick, onPhotoDeleted, onPhotoUpdated, pagination, authState, statsData, sortOrder = 'newest', onSortOrderChange }) => {
+export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMapClick, onPhotoDeleted, onPhotoUpdated, pagination, authState, statsData, sortOrder = 'newest', onSortOrderChange, authToken }) => {
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedPhotos, setSelectedPhotos] = useState<Set<string>>(new Set());
@@ -398,6 +400,11 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
         {/* 상세 통계 차트 */}
         {photos.length > 0 && (
           <StatsChart photos={photos} />
+        )}
+
+        {/* 지역별 사진 분포 */}
+        {authState?.isAuthenticated && authToken && (
+          <LocationDistribution authToken={authToken} />
         )}
 
         {photos.length === 0 ? (
