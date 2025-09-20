@@ -1,47 +1,45 @@
 """
-데이터베이스 클라이언트 팩토리
-설정에 따라 MySQL 또는 NoSQL 클라이언트를 반환
+MySQL 데이터베이스 클라이언트
+MySQL 전용으로 간소화
 """
 import os
 import sys
-from typing import Union
+from typing import Any
 
 # 현재 디렉토리를 Python 경로에 추가
 current_dir = os.path.dirname(os.path.abspath(__file__))
 if current_dir not in sys.path:
     sys.path.insert(0, current_dir)
 
+# MySQL Client import with fallback
 try:
-    from config import Config
     from mysql_client import MySQLClient
-    from nosql_client import OCINoSQLClient
 except ImportError:
-    # 상대 import fallback
-    from .config import Config
-    from .mysql_client import MySQLClient
-    from .nosql_client import OCINoSQLClient
+    try:
+        from .mysql_client import MySQLClient
+    except ImportError:
+        import importlib.util
+        mysql_spec = importlib.util.spec_from_file_location("mysql_client", os.path.join(current_dir, "mysql_client.py"))
+        mysql_module = importlib.util.module_from_spec(mysql_spec)
+        mysql_spec.loader.exec_module(mysql_module)
+        MySQLClient = mysql_module.MySQLClient
 
 
 class DatabaseClientFactory:
-    """데이터베이스 클라이언트 팩토리 클래스"""
+    """MySQL 데이터베이스 클라이언트 팩토리 클래스"""
 
     @staticmethod
-    def get_client() -> Union[MySQLClient, OCINoSQLClient]:
+    def get_client() -> MySQLClient:
         """
-        설정에 따라 적절한 데이터베이스 클라이언트를 반환
+        MySQL 클라이언트 반환
 
         Returns:
-            MySQL 또는 NoSQL 클라이언트
+            MySQL 클라이언트
         """
-        if Config.DATABASE_TYPE.lower() == 'mysql':
-            return MySQLClient()
-        elif Config.DATABASE_TYPE.lower() == 'nosql':
-            return OCINoSQLClient()
-        else:
-            raise ValueError(f"지원하지 않는 데이터베이스 타입: {Config.DATABASE_TYPE}")
+        return MySQLClient()
 
 
 # 편의를 위한 전역 함수
-def get_database_client() -> Union[MySQLClient, OCINoSQLClient]:
-    """데이터베이스 클라이언트 인스턴스 반환"""
+def get_database_client() -> MySQLClient:
+    """MySQL 데이터베이스 클라이언트 인스턴스 반환"""
     return DatabaseClientFactory.get_client()

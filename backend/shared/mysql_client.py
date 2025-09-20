@@ -7,7 +7,19 @@ import json
 from typing import Dict, Any, List, Optional
 from datetime import datetime, timezone
 from contextlib import contextmanager
-from .config import Config
+# Config import with fallback
+try:
+    from config import Config
+except ImportError:
+    try:
+        from .config import Config
+    except ImportError:
+        import importlib.util
+        import os
+        config_spec = importlib.util.spec_from_file_location("config", os.path.join(os.path.dirname(__file__), "config.py"))
+        config_module = importlib.util.module_from_spec(config_spec)
+        config_spec.loader.exec_module(config_module)
+        Config = config_module.Config
 
 
 class MySQLClient:

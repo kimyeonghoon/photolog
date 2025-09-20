@@ -13,19 +13,12 @@ class Config:
     OCI_BUCKET_NAME: str = os.getenv('OCI_BUCKET_NAME', 'your-bucket-name')
     OCI_REGION: str = os.getenv('OCI_REGION', 'ap-chuncheon-1')
 
-    # OCI NoSQL Database 설정 (레거시)
-    NOSQL_COMPARTMENT_ID: str = os.getenv('NOSQL_COMPARTMENT_ID', '')
-    NOSQL_TABLE_NAME: str = os.getenv('NOSQL_TABLE_NAME', 'photos')
-
     # MySQL Database 설정
     MYSQL_HOST: str = os.getenv('MYSQL_HOST', 'localhost')
     MYSQL_PORT: int = int(os.getenv('MYSQL_PORT', '3306'))
     MYSQL_USER: str = os.getenv('MYSQL_USER', 'root')
     MYSQL_PASSWORD: str = os.getenv('MYSQL_PASSWORD', '')
     MYSQL_DATABASE: str = os.getenv('MYSQL_DATABASE', 'photolog')
-
-    # 데이터베이스 타입 선택 (mysql 또는 nosql)
-    DATABASE_TYPE: str = os.getenv('DATABASE_TYPE', 'mysql')
 
     # 파일 업로드 제한
     MAX_FILE_SIZE: int = int(os.getenv('MAX_FILE_SIZE', '50')) * 1024 * 1024  # 50MB
@@ -46,15 +39,12 @@ class Config:
             'OCI_BUCKET_NAME'
         ]
 
-        # 데이터베이스 타입에 따른 추가 검증
-        if cls.DATABASE_TYPE == 'mysql':
-            required_vars.extend([
-                'MYSQL_HOST',
-                'MYSQL_USER',
-                'MYSQL_DATABASE'
-            ])
-        elif cls.DATABASE_TYPE == 'nosql':
-            required_vars.append('NOSQL_COMPARTMENT_ID')
+        # MySQL 데이터베이스 설정 검증
+        required_vars.extend([
+            'MYSQL_HOST',
+            'MYSQL_USER',
+            'MYSQL_DATABASE'
+        ])
 
         missing_vars = []
         for var in required_vars:
