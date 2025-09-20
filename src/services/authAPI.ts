@@ -5,7 +5,7 @@
 
 const API_BASE_URL = window.location.hostname === 'localhost'
   ? 'http://localhost:8001'
-  : `${window.location.protocol}//${window.location.host}/api/`
+  : `${window.location.protocol}//${window.location.host}/api`
 
 export interface LoginRequest {
   email: string
@@ -125,9 +125,19 @@ export class AuthAPIClient {
   }
 
   /**
+   * localStorage에서 토큰 동기화
+   */
+  syncTokenFromStorage(): void {
+    this.token = localStorage.getItem('auth_token')
+  }
+
+  /**
    * 인증 헤더 반환
    */
   getAuthHeaders(): Record<string, string> {
+    // 매번 최신 토큰을 localStorage에서 동기화
+    this.syncTokenFromStorage()
+
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     }

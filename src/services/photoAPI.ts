@@ -8,7 +8,7 @@ import { authAPI } from './authAPI'
 // API 설정
 const API_BASE_URL = window.location.hostname === 'localhost'
   ? 'http://localhost:8001'
-  : `${window.location.protocol}//${window.location.host}/api/`;
+  : `${window.location.protocol}//${window.location.host}/api`;
 
 // 통합 스토리지 서비스 사용 여부 (환경변수로 제어)
 const USE_UNIFIED_STORAGE = true;
@@ -492,9 +492,6 @@ export class PhotoAPIClient {
     try {
       const result = await this.makeRequest<any>(`/photos/${photoId}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(updates)
       });
 
