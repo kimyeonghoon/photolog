@@ -565,12 +565,12 @@ def delete_photo(photo_id: str) -> dict:
         # 원본 사진 삭제
         original_key = f"photos/{photo_id}.jpg"
         try:
-            delete_result = service.storage_client.delete_file(original_key)
-            if delete_result.get('success', False):
+            delete_result = service.storage.delete_file(original_key)
+            if delete_result:
                 print(f"✅ 원본 사진 삭제 성공: {original_key}")
                 deletion_results.append(f"원본: {original_key}")
             else:
-                print(f"⚠️ 원본 사진 삭제 실패: {delete_result.get('error', 'Unknown error')}")
+                print(f"⚠️ 원본 사진 삭제 실패: {original_key}")
         except Exception as e:
             print(f"❌ 원본 사진 삭제 중 오류: {e}")
 
@@ -579,8 +579,8 @@ def delete_photo(photo_id: str) -> dict:
         for size in thumbnail_sizes:
             thumbnail_key = f"thumbnails/{photo_id}_{size}.jpg"
             try:
-                delete_result = service.storage_client.delete_file(thumbnail_key)
-                if delete_result.get('success', False):
+                delete_result = service.storage.delete_file(thumbnail_key)
+                if delete_result:
                     print(f"✅ 썸네일 삭제 성공: {thumbnail_key}")
                     deletion_results.append(f"썸네일 {size}: {thumbnail_key}")
                 else:
