@@ -1,0 +1,200 @@
+.location-distribution {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 24px;
+}
+
+.location-distribution-header {
+  margin-bottom: 20px;
+  border-bottom: 1px solid #f0f0f0;
+  padding-bottom: 16px;
+}
+
+.location-distribution-header h3 {
+  margin: 0 0 8px 0;
+  color: #333;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.distribution-summary {
+  margin: 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.loading-message,
+.error-message,
+.empty-message {
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+  font-size: 0.95rem;
+}
+
+.error-message {
+  color: #dc3545;
+}
+
+.retry-button {
+  margin-left: 12px;
+  padding: 6px 12px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.retry-button:hover {
+  background: #0056b3;
+}
+
+.location-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.location-item {
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #007bff;
+  transition: all 0.2s;
+}
+
+.location-item:hover {
+  background: #e9ecef;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.location-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.location-name {
+  font-weight: 600;
+  color: #333;
+  font-size: 1rem;
+}
+
+.photo-count {
+  color: #666;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.location-bar {
+  width: 100%;
+  height: 6px;
+  background: #e9ecef;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.location-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #007bff, #0056b3);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.location-dates {
+  margin-bottom: 4px;
+}
+
+.date-info {
+  color: #666;
+  font-size: 0.85rem;
+}
+
+.location-coordinates {
+  color: #888;
+  font-size: 0.8rem;
+  font-family: 'Courier New', monospace;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .location-distribution {
+    margin: 16px;
+    padding: 16px;
+  }
+
+  .location-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .location-name {
+    font-size: 0.95rem;
+  }
+
+  .photo-count {
+    font-size: 0.85rem;
+  }
+}
+
+/* 다크 모드 대응 */
+@media (prefers-color-scheme: dark) {
+  .location-distribution {
+    background: #1a1a1a;
+    border: 1px solid #333;
+  }
+
+  .location-distribution-header {
+    border-bottom-color: #333;
+  }
+
+  .location-distribution-header h3 {
+    color: #fff;
+  }
+
+  .distribution-summary {
+    color: #ccc;
+  }
+
+  .location-item {
+    background: #2d2d2d;
+    border-left-color: #4dabf7;
+  }
+
+  .location-item:hover {
+    background: #3d3d3d;
+  }
+
+  .location-name {
+    color: #fff;
+  }
+
+  .photo-count {
+    color: #ccc;
+  }
+
+  .location-bar {
+    background: #333;
+  }
+
+  .location-bar-fill {
+    background: linear-gradient(90deg, #4dabf7, #339af0);
+  }
+
+  .date-info {
+    color: #ccc;
+  }
+
+  .location-coordinates {
+    color: #aaa;
+  }
+}
