@@ -18,6 +18,7 @@ const LocationDistribution: React.FC<LocationDistributionProps> = ({ authToken }
   const [locationData, setLocationData] = useState<LocationData[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const fetchLocationDistribution = async () => {
     setLoading(true);
@@ -61,59 +62,37 @@ const LocationDistribution: React.FC<LocationDistributionProps> = ({ authToken }
     fetchLocationDistribution();
   }, [authToken]);
 
-  if (loading) {
-    return (
-      <div className="location-distribution">
-        <div className="location-distribution-header">
-          <h3>🌍 지역별 사진 분포</h3>
-        </div>
+  const totalPhotosWithLocation = locationData.reduce((sum, item) => sum + item.photo_count, 0);
+
+  const renderContent = () => {
+    if (loading) {
+      return (
         <div className="loading-message">
           📊 지역별 분포 데이터를 불러오는 중...
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  if (error) {
-    return (
-      <div className="location-distribution">
-        <div className="location-distribution-header">
-          <h3>🌍 지역별 사진 분포</h3>
-        </div>
+    if (error) {
+      return (
         <div className="error-message">
           ❌ {error}
           <button onClick={fetchLocationDistribution} className="retry-button">
             다시 시도
           </button>
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  if (locationData.length === 0) {
-    return (
-      <div className="location-distribution">
-        <div className="location-distribution-header">
-          <h3>🌍 지역별 사진 분포</h3>
-        </div>
+    if (locationData.length === 0) {
+      return (
         <div className="empty-message">
           📍 위치 정보가 있는 사진이 없습니다
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  const totalPhotosWithLocation = locationData.reduce((sum, item) => sum + item.photo_count, 0);
-
-  return (
-    <div className="location-distribution">
-      <div className="location-distribution-header">
-        <h3>🌍 지역별 사진 분포</h3>
-        <p className="distribution-summary">
-          총 {locationData.length}개 지역, {totalPhotosWithLocation}장의 사진
-        </p>
-      </div>
-
+    return (
       <div className="location-list">
         {locationData.map((location, index) => {
           const percentage = ((location.photo_count / totalPhotosWithLocation) * 100).toFixed(1);
@@ -154,6 +133,30 @@ const LocationDistribution: React.FC<LocationDistributionProps> = ({ authToken }
           );
         })}
       </div>
+    );
+  };
+
+  return (
+    <div className="location-distribution">
+      <div
+        className="location-distribution-header clickable"
+        onClick={() => setIsExpanded(!isExpanded)}
+        style={{ cursor: 'pointer' }}
+      >
+        <h3>
+          🌍 지역별 사진 분포
+          <span className="toggle-icon">{isExpanded ? '▼' : '▶'}</span>
+        </h3>
+        {(locationData.length > 0 || loading || error) && (
+          <p className="distribution-summary">
+            {loading ? '로딩 중...' :
+             error ? '오류 발생' :
+             `총 ${locationData.length}개 지역, ${totalPhotosWithLocation}장의 사진`}
+          </p>
+        )}
+      </div>
+
+      {isExpanded && renderContent()}
     </div>
   );
 };

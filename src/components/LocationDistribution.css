@@ -10,6 +10,17 @@
   margin-bottom: 20px;
   border-bottom: 1px solid #f0f0f0;
   padding-bottom: 16px;
+  transition: all 0.2s ease;
+}
+
+.location-distribution-header.clickable {
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: -12px -16px 8px -16px;
+}
+
+.location-distribution-header.clickable:hover {
+  background-color: #f8f9fa;
 }
 
 .location-distribution-header h3 {
@@ -17,6 +28,16 @@
   color: #333;
   font-size: 1.25rem;
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.toggle-icon {
+  font-size: 0.9rem;
+  color: #666;
+  margin-left: 8px;
+  transition: transform 0.2s ease;
 }
 
 .distribution-summary {
