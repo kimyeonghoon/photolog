@@ -2,10 +2,24 @@
 데이터베이스 클라이언트 팩토리
 설정에 따라 MySQL 또는 NoSQL 클라이언트를 반환
 """
+import os
+import sys
 from typing import Union
-from .config import Config
-from .mysql_client import MySQLClient
-from .nosql_client import OCINoSQLClient
+
+# 현재 디렉토리를 Python 경로에 추가
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
+
+try:
+    from config import Config
+    from mysql_client import MySQLClient
+    from nosql_client import OCINoSQLClient
+except ImportError:
+    # 상대 import fallback
+    from .config import Config
+    from .mysql_client import MySQLClient
+    from .nosql_client import OCINoSQLClient
 
 
 class DatabaseClientFactory:

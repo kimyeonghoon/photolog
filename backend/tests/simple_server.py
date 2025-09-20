@@ -428,19 +428,18 @@ class PhotoAPIHandler(BaseHTTPRequestHandler):
                 # 데이터베이스 클라이언트로 메타데이터 업데이트
                 import sys
                 import os
-                shared_path = os.path.join(os.path.dirname(__file__), '..', 'shared')
-                if shared_path not in sys.path:
-                    sys.path.insert(0, shared_path)
+                import importlib.util
 
-                try:
-                    from database_client import get_database_client
-                except ImportError:
-                    # Fallback import method
-                    import importlib.util
-                    spec = importlib.util.spec_from_file_location("database_client", os.path.join(shared_path, "database_client.py"))
-                    database_client_module = importlib.util.module_from_spec(spec)
-                    spec.loader.exec_module(database_client_module)
-                    get_database_client = database_client_module.get_database_client
+                # shared 디렉토리 경로 설정
+                current_dir = os.path.dirname(os.path.abspath(__file__))
+                shared_path = os.path.join(current_dir, '..', 'shared')
+                shared_path = os.path.abspath(shared_path)
+
+                # database_client 모듈 동적 로딩
+                spec = importlib.util.spec_from_file_location("database_client", os.path.join(shared_path, "database_client.py"))
+                database_client_module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(database_client_module)
+                get_database_client = database_client_module.get_database_client
 
                 db_client = get_database_client()
 
