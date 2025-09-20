@@ -175,6 +175,15 @@ def handler_unified(request_data: dict = None) -> dict:
                 )
 
                 if upload_result['success']:
+                    # DB 저장 상태 확인
+                    if not upload_result.get('db_saved', True):
+                        print(f"❌ 파일 업로드는 성공했지만 DB 저장 실패: {photo_id}")
+                        processed_files.append({
+                            'success': False,
+                            'error': f'데이터베이스 저장 실패: {photo_id}'
+                        })
+                        continue
+
                     # 성공 응답 데이터 구성
                     response_data = {
                         'photo_id': photo_id,
