@@ -306,3 +306,102 @@ class OCINoSQLClient:
                 "success": False,
                 "error": str(e)
             }
+
+    def get_photos_by_location(self) -> Dict[str, Any]:
+        """
+        지역별 사진 분포 조회 (NoSQL용 기본 구현)
+
+        Returns:
+            지역별 사진 개수 및 분포 정보
+        """
+        try:
+            # NoSQL은 GROUP BY가 제한적이므로 모든 사진을 가져와서 메모리에서 처리
+            photos_result = self.list_photos(limit=1000)  # 충분히 큰 limit
+
+            if not photos_result.get('success', False):
+                return {
+                    "success": False,
+                    "error": "사진 목록 조회 실패",
+                    "distribution": []
+                }
+
+            photos = photos_result.get('photos', [])
+            location_map = {}
+
+            for photo in photos:
+                # 위치 정보가 있는 사진만 처리
+                if not photo.get('location'):
+                    continue
+
+                location = photo['location']
+                if not isinstance(location, dict):
+                    continue
+
+                # 지역명 생성 (city, country 순으로)
+                location_name = None
+                if location.get('city') and location.get('city').strip():
+                    city = location['city'].strip()
+                    country = location.get('country', '').strip()
+                    if country:
+                        location_name = f"{city}, {country}"
+                    else:
+                        location_name = city
+                elif location.get('country') and location.get('country').strip():
+                    location_name = location['country'].strip()
+                else:
+                    continue  # 유효한 지역 정보가 없으면 건너뛰기
+
+                # 지역별 집계
+                if location_name not in location_map:
+                    location_map[location_name] = {
+                        'photo_count': 0,
+                        'latitudes': [],
+                        'longitudes': [],
+                        'dates': []
+                    }
+
+                location_map[location_name]['photo_count'] += 1
+
+                # 좌표 정보
+                if location.get('latitude') is not None:
+                    location_map[location_name]['latitudes'].append(float(location['latitude']))
+                if location.get('longitude') is not None:
+                    location_map[location_name]['longitudes'].append(float(location['longitude']))
+
+                # 날짜 정보 (taken_timestamp 우선, 없으면 upload_timestamp)
+                photo_date = photo.get('taken_timestamp') or photo.get('upload_timestamp')
+                if photo_date:
+                    location_map[location_name]['dates'].append(photo_date)
+
+            # 결과 생성
+            distribution = []
+            for location_name, data in location_map.items():
+                avg_lat = sum(data['latitudes']) / len(data['latitudes']) if data['latitudes'] else None
+                avg_lng = sum(data['longitudes']) / len(data['longitudes']) if data['longitudes'] else None
+
+                first_date = min(data['dates']) if data['dates'] else None
+                latest_date = max(data['dates']) if data['dates'] else None
+
+                distribution.append({
+                    'location_name': location_name,
+                    'photo_count': data['photo_count'],
+                    'avg_latitude': avg_lat,
+                    'avg_longitude': avg_lng,
+                    'first_photo_date': first_date,
+                    'latest_photo_date': latest_date
+                })
+
+            # 사진 개수 순으로 정렬
+            distribution.sort(key=lambda x: x['photo_count'], reverse=True)
+
+            return {
+                "success": True,
+                "distribution": distribution
+            }
+
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "distribution": []
+            }

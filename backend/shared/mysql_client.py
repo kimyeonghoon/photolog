@@ -558,3 +558,69 @@ class MySQLClient:
                 "success": False,
                 "error": str(e)
             }
+
+    def get_photos_by_location(self) -> Dict[str, Any]:
+        """
+        지역별 사진 분포 조회
+
+        Returns:
+            지역별 사진 개수 및 분포 정보
+        """
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor(pymysql.cursors.DictCursor)
+
+                # 지역별 사진 개수 조회 (도시와 국가 정보 기준)
+                sql = """
+                SELECT
+                    CASE
+                        WHEN location_city IS NOT NULL AND location_city != '' THEN
+                            CONCAT(location_city, CASE WHEN location_country IS NOT NULL AND location_country != '' THEN CONCAT(', ', location_country) ELSE '' END)
+                        WHEN location_country IS NOT NULL AND location_country != '' THEN location_country
+                        ELSE '위치 정보 없음'
+                    END as location_name,
+                    COUNT(*) as photo_count,
+                    AVG(latitude) as avg_latitude,
+                    AVG(longitude) as avg_longitude,
+                    MIN(COALESCE(taken_timestamp, upload_timestamp)) as first_photo_date,
+                    MAX(COALESCE(taken_timestamp, upload_timestamp)) as latest_photo_date
+                FROM photos
+                WHERE latitude IS NOT NULL AND longitude IS NOT NULL
+                GROUP BY location_name
+                ORDER BY photo_count DESC, location_name
+                """
+
+                cursor.execute(sql)
+                results = cursor.fetchall()
+
+                distribution = []
+                for result in results:
+                    # datetime 객체를 문자열로 변환
+                    first_photo_date = result['first_photo_date']
+                    latest_photo_date = result['latest_photo_date']
+
+                    if first_photo_date and hasattr(first_photo_date, 'isoformat'):
+                        first_photo_date = first_photo_date.isoformat()
+                    if latest_photo_date and hasattr(latest_photo_date, 'isoformat'):
+                        latest_photo_date = latest_photo_date.isoformat()
+
+                    distribution.append({
+                        "location_name": result['location_name'],
+                        "photo_count": int(result['photo_count']),
+                        "avg_latitude": float(result['avg_latitude']) if result['avg_latitude'] else None,
+                        "avg_longitude": float(result['avg_longitude']) if result['avg_longitude'] else None,
+                        "first_photo_date": first_photo_date,
+                        "latest_photo_date": latest_photo_date
+                    })
+
+                return {
+                    "success": True,
+                    "distribution": distribution
+                }
+
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "distribution": []
+            }

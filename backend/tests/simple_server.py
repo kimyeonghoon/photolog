@@ -70,6 +70,7 @@ class PhotoAPIHandler(BaseHTTPRequestHandler):
                     "/api/photos/upload-unified",
                     "/api/photos",
                     "/api/photos/stats",
+                    "/api/photos/by-location",
                     "/api/photos/{id}",
                     "/storage/*"
                 ]
@@ -114,6 +115,20 @@ class PhotoAPIHandler(BaseHTTPRequestHandler):
                 error_response = {
                     "success": False,
                     "message": f"사진 통계 조회 실패: {str(e)}",
+                    "error": str(e)
+                }
+                self.send_json_response(500, error_response)
+
+        elif parsed_path.path == '/api/photos/by-location':
+            # 지역별 사진 분포 조회
+            try:
+                from test_func_unified import get_photos_by_location
+                result = get_photos_by_location()
+                self.send_json_response(200, result)
+            except Exception as e:
+                error_response = {
+                    "success": False,
+                    "message": f"지역별 분포 조회 실패: {str(e)}",
                     "error": str(e)
                 }
                 self.send_json_response(500, error_response)

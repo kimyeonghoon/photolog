@@ -653,5 +653,46 @@ def get_photo_stats() -> dict:
         return create_api_response(500, None, f"통계 조회 중 오류: {str(e)}")
 
 
+def get_photos_by_location() -> dict:
+    """
+    지역별 사진 분포 조회 API 함수
+
+    Returns:
+        dict: 지역별 사진 개수 및 분포 정보
+    """
+    try:
+        storage_type = os.getenv('STORAGE_TYPE', 'OCI')
+        service = UnifiedStorageService(storage_type)
+
+        # 데이터베이스 클라이언트가 있는 경우 데이터베이스에서 지역별 분포 조회
+        if hasattr(service, 'db_client') and service.db_client:
+            print("🌍 데이터베이스에서 지역별 사진 분포 조회 중...")
+            result = service.db_client.get_photos_by_location()
+
+            if result['success']:
+                distribution = result['distribution']
+                print(f"✅ 지역별 분포 조회 성공: {len(distribution)}개 지역")
+
+                # 로그로 분포 정보 출력
+                for location_data in distribution:
+                    location_name = location_data.get('location_name', '위치 정보 없음')
+                    count = location_data.get('photo_count', 0)
+                    print(f"   {location_name}: {count}장")
+
+                return create_api_response(200, {
+                    'distribution': distribution,
+                    'total_locations': len(distribution),
+                    'total_photos_with_location': sum(item.get('photo_count', 0) for item in distribution)
+                }, "지역별 분포 조회 성공")
+            else:
+                return create_api_response(500, None, f"지역별 분포 조회 실패: {result.get('error')}")
+        else:
+            return create_api_response(500, None, "데이터베이스 클라이언트를 사용할 수 없습니다")
+
+    except Exception as e:
+        print(f"❌ 지역별 분포 조회 중 오류: {str(e)}")
+        return create_api_response(500, None, f"지역별 분포 조회 중 오류: {str(e)}")
+
+
 if __name__ == "__main__":
     main_test()
