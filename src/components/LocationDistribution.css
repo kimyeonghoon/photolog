@@ -1,32 +1,33 @@
 .location-distribution {
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  margin-bottom: 24px;
+  width: 100%;
+  padding: 30px;
+  background: var(--bg-secondary);
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 60px;
+  box-shadow: var(--shadow-card);
 }
 
 .location-distribution-header {
   margin-bottom: 20px;
-  border-bottom: 1px solid #f0f0f0;
-  padding-bottom: 16px;
   transition: all 0.2s ease;
 }
 
 .location-distribution-header.clickable {
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 12px 16px;
   margin: -12px -16px 8px -16px;
+  cursor: pointer;
 }
 
 .location-distribution-header.clickable:hover {
-  background-color: #f8f9fa;
+  background-color: var(--bg-hover);
 }
 
 .location-distribution-header h3 {
   margin: 0 0 8px 0;
-  color: #333;
-  font-size: 1.25rem;
+  color: var(--text-primary);
+  font-size: 1.1rem;
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -35,14 +36,14 @@
 
 .toggle-icon {
   font-size: 0.9rem;
-  color: #666;
+  color: var(--text-muted);
   margin-left: 8px;
   transition: transform 0.2s ease;
 }
 
 .distribution-summary {
   margin: 0;
-  color: #666;
+  color: var(--text-muted);
   font-size: 0.9rem;
 }
 
@@ -50,19 +51,19 @@
 .error-message,
 .empty-message {
   text-align: center;
-  padding: 40px 20px;
-  color: #666;
+  padding: var(--spacing-xl);
+  color: var(--text-muted);
   font-size: 0.95rem;
 }
 
 .error-message {
-  color: #dc3545;
+  color: var(--color-error);
 }
 
 .retry-button {
   margin-left: 12px;
   padding: 6px 12px;
-  background: #007bff;
+  background: var(--color-primary);
   color: white;
   border: none;
   border-radius: 6px;
@@ -72,27 +73,27 @@
 }
 
 .retry-button:hover {
-  background: #0056b3;
+  background: var(--color-primary-hover);
 }
 
 .location-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--spacing-md);
 }
 
 .location-item {
-  padding: 16px;
-  background: #f8f9fa;
-  border-radius: 8px;
-  border-left: 4px solid #007bff;
-  transition: all 0.2s;
+  padding: var(--spacing-md);
+  background: var(--bg-primary);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  transition: all 0.2s ease;
 }
 
 .location-item:hover {
-  background: #e9ecef;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: var(--bg-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
 }
 
 .location-header {
@@ -104,12 +105,12 @@
 
 .location-name {
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
   font-size: 1rem;
 }
 
 .photo-count {
-  color: #666;
+  color: var(--text-muted);
   font-size: 0.9rem;
   font-weight: 500;
 }
@@ -117,7 +118,7 @@
 .location-bar {
   width: 100%;
   height: 6px;
-  background: #e9ecef;
+  background: var(--bg-tertiary);
   border-radius: 3px;
   overflow: hidden;
   margin-bottom: 8px;
@@ -125,7 +126,7 @@
 
 .location-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, #007bff, #0056b3);
+  background: var(--gradient-primary);
   border-radius: 3px;
   transition: width 0.3s ease;
 }
@@ -135,27 +136,27 @@
 }
 
 .date-info {
-  color: #666;
+  color: var(--text-muted);
   font-size: 0.85rem;
 }
 
 .location-coordinates {
-  color: #888;
+  color: var(--text-secondary);
   font-size: 0.8rem;
-  font-family: 'Courier New', monospace;
+  font-family: var(--font-mono);
 }
 
 /* 반응형 디자인 */
 @media (max-width: 768px) {
   .location-distribution {
-    margin: 16px;
-    padding: 16px;
+    margin: var(--spacing-md);
+    padding: var(--spacing-md);
   }
 
   .location-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 4px;
+    gap: var(--spacing-xs);
   }
 
   .location-name {
@@ -164,58 +165,5 @@
 
   .photo-count {
     font-size: 0.85rem;
-  }
-}
-
-/* 다크 모드 대응 */
-@media (prefers-color-scheme: dark) {
-  .location-distribution {
-    background: #1a1a1a;
-    border: 1px solid #333;
-  }
-
-  .location-distribution-header {
-    border-bottom-color: #333;
-  }
-
-  .location-distribution-header h3 {
-    color: #fff;
-  }
-
-  .distribution-summary {
-    color: #ccc;
-  }
-
-  .location-item {
-    background: #2d2d2d;
-    border-left-color: #4dabf7;
-  }
-
-  .location-item:hover {
-    background: #3d3d3d;
-  }
-
-  .location-name {
-    color: #fff;
-  }
-
-  .photo-count {
-    color: #ccc;
-  }
-
-  .location-bar {
-    background: #333;
-  }
-
-  .location-bar-fill {
-    background: linear-gradient(90deg, #4dabf7, #339af0);
-  }
-
-  .date-info {
-    color: #ccc;
-  }
-
-  .location-coordinates {
-    color: #aaa;
   }
 }
