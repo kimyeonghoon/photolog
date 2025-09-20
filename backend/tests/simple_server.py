@@ -33,6 +33,7 @@ sys.path.insert(0, os.path.join(current_dir, '..')) # 부모 디렉토리 (backe
 from test_func_unified import handler_unified       # 통합 사진 업로드 핸들러
 sys.path.insert(0, os.path.join(current_dir, '..', 'shared')) # 공유 모듈 경로
 from auth_service import AuthService, verify_auth_token, require_auth  # JWT 인증 서비스
+from database_client import get_database_client  # 데이터베이스 클라이언트
 
 class PhotoAPIHandler(BaseHTTPRequestHandler):
     """
@@ -426,21 +427,6 @@ class PhotoAPIHandler(BaseHTTPRequestHandler):
                 print(f"📄 수정 데이터: {request_json}")
 
                 # 데이터베이스 클라이언트로 메타데이터 업데이트
-                import sys
-                import os
-                import importlib.util
-
-                # shared 디렉토리 경로 설정
-                current_dir = os.path.dirname(os.path.abspath(__file__))
-                shared_path = os.path.join(current_dir, '..', 'shared')
-                shared_path = os.path.abspath(shared_path)
-
-                # database_client 모듈 동적 로딩
-                spec = importlib.util.spec_from_file_location("database_client", os.path.join(shared_path, "database_client.py"))
-                database_client_module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(database_client_module)
-                get_database_client = database_client_module.get_database_client
-
                 db_client = get_database_client()
 
                 # 기존 사진 데이터 조회
