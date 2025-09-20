@@ -531,6 +531,26 @@ export class PhotoAPIClient {
   }> {
     return this.makeRequest('/photos/stats');
   }
+
+  /**
+   * 년도별/월별 사진 통계 조회
+   */
+  async getPhotosByDate(): Promise<{
+    success: boolean;
+    message: string;
+    data?: {
+      yearly_stats: Array<{
+        year: number;
+        photo_count: number;
+      }>;
+      monthly_stats: Array<{
+        month: number;
+        photo_count: number;
+      }>;
+    };
+  }> {
+    return this.makeRequest('/photos/by-date');
+  }
 }
 
 // 기본 인스턴스 생성
