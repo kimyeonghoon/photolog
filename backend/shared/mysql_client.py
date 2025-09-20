@@ -354,10 +354,14 @@ class MySQLClient:
                 cursor.execute(monthly_sql)
                 monthly_stats = cursor.fetchall()
 
-                # 결과 정리
-                total_photos = basic_stats['total_photos']
-                photos_with_location = basic_stats['photos_with_location']
-                photos_with_description = basic_stats['photos_with_description']
+                # 결과 정리 (Decimal 타입을 int로 변환하여 JSON 직렬화 오류 방지)
+                total_photos = int(basic_stats['total_photos'])
+                photos_with_location = int(basic_stats['photos_with_location'])
+                photos_with_description = int(basic_stats['photos_with_description'])
+                this_month_photos = int(this_month_stats['this_month_photos'])
+
+                # Decimal 타입을 int로 변환
+                total_size = int(basic_stats['total_size']) if basic_stats['total_size'] is not None else 0
 
                 # datetime 객체를 문자열로 변환
                 first_photo_date = basic_stats['first_photo_date']
@@ -374,17 +378,17 @@ class MySQLClient:
                         "total_photos": total_photos,
                         "photos_with_location": photos_with_location,
                         "photos_with_description": photos_with_description,
-                        "this_month_photos": this_month_stats['this_month_photos'],
-                        "total_size": basic_stats['total_size'],
+                        "this_month_photos": this_month_photos,
+                        "total_size": total_size,
                         "first_photo_date": first_photo_date,
                         "latest_photo_date": latest_photo_date,
                         "location_percentage": round((photos_with_location / total_photos) * 100) if total_photos > 0 else 0,
                         "description_percentage": round((photos_with_description / total_photos) * 100) if total_photos > 0 else 0,
                         "monthly_stats": [
                             {
-                                "year": stat["year"],
-                                "month": stat["month"],
-                                "count": stat["count"]
+                                "year": int(stat["year"]),
+                                "month": int(stat["month"]),
+                                "count": int(stat["count"])
                             } for stat in monthly_stats
                         ]
                     }

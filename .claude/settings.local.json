@@ -54,7 +54,10 @@
       "Bash(docker run:*)",
       "Bash(docker rm:*)",
       "Bash(docker logs:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(npm run typecheck:*)",
+      "Bash(npx tsc:*)",
+      "Bash(pip3 install:*)"
     ],
     "deny": [],
     "ask": []

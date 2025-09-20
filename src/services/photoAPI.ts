@@ -510,6 +510,27 @@ export class PhotoAPIClient {
       };
     }
   }
+
+  /**
+   * 사진 통계 조회
+   */
+  async getStats(): Promise<{
+    success: boolean;
+    message: string;
+    data?: {
+      total_photos: number;
+      photos_with_location: number;
+      photos_with_description: number;
+      location_percentage: number;
+      description_percentage: number;
+      total_size: number;
+      first_photo_date?: string;
+      latest_photo_date?: string;
+      this_month_photos?: number;
+    };
+  }> {
+    return this.makeRequest('/photos/stats');
+  }
 }
 
 // 기본 인스턴스 생성
@@ -578,4 +599,25 @@ export const updatePhoto = async (photoId: string, updates: {
   data?: any;
 }> => {
   return photoAPI.updatePhoto(photoId, updates);
+};
+
+/**
+ * 사진 통계 조회
+ */
+export const getPhotoStats = async (): Promise<{
+  success: boolean;
+  message: string;
+  data?: {
+    total_photos: number;
+    photos_with_location: number;
+    photos_with_description: number;
+    location_percentage: number;
+    description_percentage: number;
+    total_size: number;
+    first_photo_date?: string;
+    latest_photo_date?: string;
+    this_month_photos?: number;
+  };
+}> => {
+  return photoAPI.getStats();
 };

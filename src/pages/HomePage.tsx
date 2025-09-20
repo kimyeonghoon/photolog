@@ -22,11 +22,23 @@ interface HomePageProps {
     isAuthenticated: boolean;
     onLoginClick: () => void;
   };
+  statsData?: {
+    total_photos: number;
+    photos_with_location: number;
+    photos_with_description: number;
+    location_percentage: number;
+    description_percentage: number;
+    total_size: number;
+    first_photo_date?: string;
+    latest_photo_date?: string;
+    this_month_photos?: number;
+  } | null;
+  sortOrder?: 'newest' | 'oldest';
+  onSortOrderChange?: (order: 'newest' | 'oldest') => void;
 }
 
-export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMapClick, onPhotoDeleted, onPhotoUpdated, pagination, authState }) => {
+export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMapClick, onPhotoDeleted, onPhotoUpdated, pagination, authState, statsData, sortOrder = 'newest', onSortOrderChange }) => {
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
-  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedPhotos, setSelectedPhotos] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
@@ -80,7 +92,9 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
    * @param order 정렬 순서 ('newest' | 'oldest')
    */
   const handleSortChange = (order: 'newest' | 'oldest') => {
-    setSortOrder(order);
+    if (onSortOrderChange) {
+      onSortOrderChange(order);
+    }
   };
 
   /**
@@ -209,20 +223,28 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
     return new Date(photo.uploadedAt || Date.now());
   };
 
-  // 사진 정렬 (EXIF 촬영시간 우선, 없으면 업로드 시간)
-  const sortedPhotos = [...photos].sort((a, b) => {
-    const timeA = getPhotoTime(a);
-    const timeB = getPhotoTime(b);
-    
-    if (sortOrder === 'newest') {
-      return timeB.getTime() - timeA.getTime();
-    } else {
-      return timeA.getTime() - timeB.getTime();
-    }
-  });
+  // 서버에서 이미 정렬된 순서를 그대로 사용
+  const sortedPhotos = photos;
 
-  // 통계 계산
+  // 통계 계산 - API 데이터 우선, fallback으로 로컬 계산
   const getPhotoStats = () => {
+    // API에서 가져온 통계 데이터가 있으면 사용
+    if (statsData) {
+      return {
+        totalPhotos: statsData.total_photos,
+        photosWithLocation: statsData.photos_with_location,
+        photosWithDescription: statsData.photos_with_description,
+        locationPercentage: statsData.location_percentage,
+        descriptionPercentage: statsData.description_percentage,
+        totalSize: statsData.total_size,
+        thisMonthPhotos: statsData.this_month_photos || 0,
+        // 날짜 데이터는 별도로 처리
+        firstPhotoDate: statsData.first_photo_date,
+        latestPhotoDate: statsData.latest_photo_date
+      };
+    }
+
+    // Fallback: 로컬 데이터 기반 통계 계산
     if (photos.length === 0) return null;
 
     const totalPhotos = photos.length;
@@ -230,12 +252,12 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
     const photosWithDescription = photos.filter(p => p.description && p.description.trim()).length;
 
     // 최근 촬영/업로드 날짜
-    const latestPhoto = photos.reduce((latest, photo) => 
+    const latestPhoto = photos.reduce((latest, photo) =>
       getPhotoTime(photo) > getPhotoTime(latest) ? photo : latest
     );
 
     // 첫 촬영/업로드 날짜
-    const firstPhoto = photos.reduce((earliest, photo) => 
+    const firstPhoto = photos.reduce((earliest, photo) =>
       getPhotoTime(photo) < getPhotoTime(earliest) ? photo : earliest
     );
 
@@ -249,7 +271,7 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
     const thisMonth = new Date();
     const thisMonthPhotos = photos.filter(photo => {
       const photoDate = new Date(photo.uploadedAt || Date.now());
-      return photoDate.getMonth() === thisMonth.getMonth() && 
+      return photoDate.getMonth() === thisMonth.getMonth() &&
              photoDate.getFullYear() === thisMonth.getFullYear();
     }).length;
 
@@ -257,12 +279,13 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
       totalPhotos,
       photosWithLocation,
       photosWithDescription,
-      latestPhoto,
-      firstPhoto,
       totalSize,
       thisMonthPhotos,
       locationPercentage: Math.round((photosWithLocation / totalPhotos) * 100),
-      descriptionPercentage: Math.round((photosWithDescription / totalPhotos) * 100)
+      descriptionPercentage: Math.round((photosWithDescription / totalPhotos) * 100),
+      // Fallback에서는 날짜 문자열로 반환
+      firstPhotoDate: getPhotoTime(firstPhoto).toISOString(),
+      latestPhotoDate: getPhotoTime(latestPhoto).toISOString()
     };
   };
 
@@ -356,12 +379,16 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
                 
                 <div className="detail-item">
                   <span className="detail-label">📅 첫 사진:</span>
-                  <span className="detail-value">{getPhotoTime(stats.firstPhoto).toLocaleDateString('ko-KR')}</span>
+                  <span className="detail-value">
+                    {stats.firstPhotoDate ? new Date(stats.firstPhotoDate).toLocaleDateString('ko-KR') : 'N/A'}
+                  </span>
                 </div>
-                
+
                 <div className="detail-item">
                   <span className="detail-label">🕒 최근 사진:</span>
-                  <span className="detail-value">{getPhotoTime(stats.latestPhoto).toLocaleDateString('ko-KR')}</span>
+                  <span className="detail-value">
+                    {stats.latestPhotoDate ? new Date(stats.latestPhotoDate).toLocaleDateString('ko-KR') : 'N/A'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -422,7 +449,7 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
             <div className="section-header">
               <div className="header-content">
                 <div className="header-left">
-                  <h2>포토로그 ({photos.length}장)</h2>
+                  <h2>포토로그 ({stats?.totalPhotos || photos.length}장)</h2>
                 </div>
 
                 <div className="header-right">

@@ -5,7 +5,7 @@ import { MapPage } from './pages/MapPage'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { LoginModal } from './components/LoginModal'
-import { uploadMultiplePhotos, PhotoAPIClient } from './services/photoAPI'
+import { uploadMultiplePhotos, PhotoAPIClient, getPhotoStats } from './services/photoAPI'
 import type { UnifiedPhotoData } from './types'
 import './App.css'
 import './components/MultiPhotoUpload.css'
@@ -46,6 +46,19 @@ function MainApp() {
   const [isLoading, setIsLoading] = useState(true)
   const [showLoginModal, setShowLoginModal] = useState(false)
 
+  // 통계 데이터 상태
+  const [statsData, setStatsData] = useState<{
+    total_photos: number;
+    photos_with_location: number;
+    photos_with_description: number;
+    location_percentage: number;
+    description_percentage: number;
+    total_size: number;
+    first_photo_date?: string;
+    latest_photo_date?: string;
+    this_month_photos?: number;
+  } | null>(null)
+
   // 페이징 관련 상태
   const [pagination, setPagination] = useState({
     currentOffset: 0,
@@ -53,6 +66,83 @@ function MainApp() {
     hasMore: true,
     isLoadingMore: false
   })
+
+  // 정렬 상태
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest')
+
+  // 정렬 순서에 따른 SQL ORDER BY 문자열 생성
+  const getOrderByClause = (order: 'newest' | 'oldest') => {
+    const direction = order === 'newest' ? 'DESC' : 'ASC'
+    return `COALESCE(exif_data->>"timestamp", upload_timestamp) ${direction}`
+  }
+
+  // 정렬 순서 변경 핸들러
+  const handleSortOrderChange = async (newOrder: 'newest' | 'oldest') => {
+    if (newOrder === sortOrder) return
+
+    setSortOrder(newOrder)
+    setIsLoading(true)
+
+    try {
+      const apiClient = new PhotoAPIClient()
+      const response = await apiClient.getPhotos(
+        pagination.pageSize,
+        0,
+        getOrderByClause(newOrder)
+      )
+
+      if (response.success && response.data) {
+        const serverPhotos: UnifiedPhotoData[] = response.data.photos.map(photo => ({
+          id: photo.id,
+          filename: photo.filename,
+          file_url: photo.file_url,
+          thumbnail_urls: photo.thumbnail_urls,
+          file_size: photo.file_size,
+          file: null,
+          description: photo.description || '',
+          location: photo.location || undefined,
+          thumbnail: undefined,
+          standardThumbnails: undefined,
+          exifData: photo.exif_data ? (typeof photo.exif_data === 'string' ? (() => {
+            try { return JSON.parse(photo.exif_data); } catch (e) { console.warn('EXIF data parsing failed:', e); return null; }
+          })() : photo.exif_data) : null,
+          uploadedAt: new Date(photo.upload_timestamp || Date.now()),
+          serverData: {
+            fileUrl: photo.file_url,
+            thumbnailUrls: photo.thumbnail_urls || {},
+            uploadTimestamp: photo.upload_timestamp,
+            fileSize: photo.file_size
+          }
+        }))
+
+        setUploadedPhotos(serverPhotos)
+
+        // 페이징 상태 리셋
+        setPagination({
+          currentOffset: serverPhotos.length,
+          pageSize: pagination.pageSize,
+          hasMore: response.data?.has_more || false,
+          isLoadingMore: false
+        })
+      }
+    } catch (error) {
+      console.error('❌ 정렬 순서 변경 후 사진 로딩 실패:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // 통계 데이터 로딩 함수
+  const loadStatsData = async () => {
+    try {
+      const statsResponse = await getPhotoStats()
+      if (statsResponse.success && statsResponse.data) {
+        setStatsData(statsResponse.data)
+      }
+    } catch (error) {
+      console.error('❌ 통계 데이터 로딩 실패:', error)
+    }
+  }
 
   // 앱 시작 시 서버에서 기존 사진 목록 불러오기
   useEffect(() => {
@@ -63,7 +153,7 @@ function MainApp() {
         const response = await apiClient.getPhotos(
           pagination.pageSize,
           0,
-          'COALESCE(exif_data->>"timestamp", upload_timestamp) DESC'
+          getOrderByClause(sortOrder)
         )
 
         if (response.success && response.data) {
@@ -102,6 +192,10 @@ function MainApp() {
           }))
         } else {
         }
+
+        // 통계 데이터도 함께 로딩
+        await loadStatsData()
+
       } catch (error) {
         console.error('❌ 사진 목록 불러오기 실패:', error)
       } finally {
@@ -123,7 +217,7 @@ function MainApp() {
       const response = await apiClient.getPhotos(
         pagination.pageSize,
         pagination.currentOffset,
-        'COALESCE(exif_data->>"timestamp", upload_timestamp) DESC'
+        getOrderByClause(sortOrder)
       )
 
       if (response.success && response.data) {
@@ -224,6 +318,8 @@ function MainApp() {
       // 성공한 업로드를 상태에 추가
       if (successfulUploads.length > 0) {
         setUploadedPhotos(prev => [...successfulUploads, ...prev]);
+        // 업로드 후 통계 새로고침
+        await loadStatsData();
       }
 
       // 업로드 완료 후 홈으로 이동
@@ -270,9 +366,11 @@ function MainApp() {
     setCurrentPage('map')
   }
 
-  const handlePhotoDeleted = (photoId: string) => {
+  const handlePhotoDeleted = async (photoId: string) => {
     // 삭제된 사진을 상태에서 제거
     setUploadedPhotos(prev => prev.filter(photo => photo.id !== photoId))
+    // 삭제 후 통계 새로고침
+    await loadStatsData()
   }
 
   const handlePhotoUpdated = (photoId: string, updates: { description?: string; timestamp?: string }) => {
@@ -378,6 +476,9 @@ function MainApp() {
             onLoadMore: loadMorePhotos
           }}
           authState={{ isAuthenticated, onLoginClick: () => setShowLoginModal(true) }}
+          statsData={statsData}
+          sortOrder={sortOrder}
+          onSortOrderChange={handleSortOrderChange}
         />
       ) : currentPage === 'upload' ? (
         <UploadPage
