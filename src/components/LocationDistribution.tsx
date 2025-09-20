@@ -43,7 +43,8 @@ const LocationDistribution: React.FC<LocationDistributionProps> = ({ authToken }
 
       const result = await response.json();
 
-      if (result.success && result.data) {
+      // API는 status 200과 data 필드를 사용 (success 필드 없음)
+      if (result.status === 200 && result.data) {
         setLocationData(result.data.distribution || []);
       } else {
         throw new Error(result.message || '지역별 분포 조회 실패');
