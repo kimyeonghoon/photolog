@@ -403,6 +403,18 @@ class UnifiedStorageService:
                     location_data = metadata.get("location") if metadata else None
                     exif_data = metadata.get("exif_data") if metadata else {}
 
+                    # 자동 지오코딩: 좌표가 있지만 지역명이 없는 경우
+                    if location_data and "latitude" in location_data and "longitude" in location_data:
+                        if not location_data.get("city") and not location_data.get("country"):
+                            print(f"🌍 자동 지오코딩 시도: ({location_data['latitude']}, {location_data['longitude']})")
+                            geocoded_info = self._geocode_coordinates(
+                                location_data["latitude"],
+                                location_data["longitude"]
+                            )
+                            if geocoded_info:
+                                location_data.update(geocoded_info)
+                                print(f"✅ 지오코딩 성공: {geocoded_info.get('city')}, {geocoded_info.get('country')}")
+
                     db_data = {
                         "id": photo_id,
                         "filename": f"{photo_id}{file_extension}",
@@ -457,6 +469,86 @@ class UnifiedStorageService:
                 "success": False,
                 "error": f"사진 업로드 중 오류: {str(e)}"
             }
+
+    def _geocode_coordinates(self, latitude: float, longitude: float) -> Optional[Dict[str, str]]:
+        """
+        좌표를 지역명으로 변환 (자동 지오코딩)
+
+        Args:
+            latitude: 위도
+            longitude: 경도
+
+        Returns:
+            지역 정보 딕셔너리 또는 None
+        """
+        try:
+            import requests
+            import time
+
+            # OpenStreetMap Nominatim API 호출
+            url = "https://nominatim.openstreetmap.org/reverse"
+            params = {
+                'format': 'json',
+                'lat': latitude,
+                'lon': longitude,
+                'accept-language': 'ko,en',
+                'addressdetails': 1,
+                'zoom': 14
+            }
+
+            headers = {
+                'User-Agent': 'Photolog/1.0 (contact@photolog.app)'
+            }
+
+            response = requests.get(url, params=params, headers=headers, timeout=10)
+
+            if response.status_code == 200:
+                data = response.json()
+
+                if 'address' in data:
+                    address = data['address']
+
+                    # 지역명 추출 (한국어 우선)
+                    city = None
+                    country = None
+
+                    # 도시명 추출 (우선순위: city > town > village > county)
+                    for key in ['city', 'town', 'village', 'county', 'state']:
+                        if key in address and address[key]:
+                            city = address[key]
+                            break
+
+                    # 국가명 추출
+                    if 'country' in address:
+                        country = address['country']
+
+                    # 한국의 경우 특별 처리
+                    if country == '대한민국' or country == 'South Korea':
+                        country = '대한민국'
+
+                        # 한국 지역명 보정
+                        if 'state' in address:
+                            state = address['state']
+                            # 도/시 정보가 더 구체적이면 사용
+                            if state and not city:
+                                city = state
+                            elif state and ('도' in state or '시' in state):
+                                city = state
+
+                    if city or country:
+                        # API 요청 제한을 위한 대기 (1초)
+                        time.sleep(1)
+
+                        return {
+                            'city': city,
+                            'country': country
+                        }
+
+            return None
+
+        except Exception as e:
+            print(f"❌ 지오코딩 오류: {str(e)}")
+            return None
 
     def list_photos(
         self,
