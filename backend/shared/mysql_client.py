@@ -54,9 +54,29 @@ class MySQLClient:
             with self.get_connection() as conn:
                 cursor = conn.cursor()
 
-                # 타임스탬프 정규화
+                # 타임스탬프 정규화 및 MySQL 호환 형식으로 변환
                 if 'upload_timestamp' not in photo_data:
                     photo_data['upload_timestamp'] = datetime.now(timezone.utc)
+
+                # datetime 필드들을 MySQL 호환 형식으로 변환
+                def normalize_timestamp(timestamp):
+                    """타임스탬프를 MySQL 호환 형식으로 변환"""
+                    if isinstance(timestamp, datetime):
+                        return timestamp.strftime('%Y-%m-%d %H:%M:%S')
+                    elif isinstance(timestamp, str):
+                        try:
+                            # ISO 8601 형식 파싱 후 MySQL 형식으로 변환
+                            dt = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+                            return dt.strftime('%Y-%m-%d %H:%M:%S')
+                        except:
+                            # 이미 MySQL 형식이거나 파싱 불가능한 경우 그대로 반환
+                            return timestamp
+                    return timestamp
+
+                if photo_data.get('upload_timestamp'):
+                    photo_data['upload_timestamp'] = normalize_timestamp(photo_data['upload_timestamp'])
+                if photo_data.get('taken_timestamp'):
+                    photo_data['taken_timestamp'] = normalize_timestamp(photo_data['taken_timestamp'])
 
                 # JSON 필드 처리
                 thumbnail_urls_json = json.dumps(photo_data.get('thumbnail_urls', {})) if photo_data.get('thumbnail_urls') else None
