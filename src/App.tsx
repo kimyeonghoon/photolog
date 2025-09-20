@@ -73,7 +73,8 @@ function MainApp() {
   // 정렬 순서에 따른 SQL ORDER BY 문자열 생성
   const getOrderByClause = (order: 'newest' | 'oldest') => {
     const direction = order === 'newest' ? 'DESC' : 'ASC'
-    return `COALESCE(exif_data->>"timestamp", upload_timestamp) ${direction}`
+    // 백엔드에서 COALESCE로 시작하는 문자열을 감지하여 JSON 필드 정렬로 변환
+    return `COALESCE(exif_timestamp, upload_timestamp) ${direction}`
   }
 
   // 정렬 순서 변경 핸들러

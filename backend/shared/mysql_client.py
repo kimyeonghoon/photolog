@@ -226,8 +226,8 @@ class MySQLClient:
 
                 # 유효한 정렬 컬럼 검증 및 특별 처리
                 if order_by.startswith('COALESCE('):
-                    # EXIF 촬영시간 우선 정렬: taken_timestamp가 있으면 사용, 없으면 upload_timestamp
-                    order_by = 'COALESCE(taken_timestamp, upload_timestamp)'
+                    # EXIF 촬영시간 우선 정렬: JSON에서 timestamp 추출, 없으면 upload_timestamp
+                    order_by = 'COALESCE(JSON_UNQUOTE(JSON_EXTRACT(exif_data_json, "$.timestamp")), upload_timestamp)'
                 else:
                     valid_columns = ['upload_timestamp', 'taken_timestamp', 'travel_date', 'filename']
                     if order_by not in valid_columns:

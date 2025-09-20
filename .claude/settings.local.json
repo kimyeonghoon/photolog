@@ -62,7 +62,9 @@
       "Bash(grep:*)",
       "Bash(tr:*)",
       "Read(//home/kim-yeonghoon/workspace/**)",
-      "Read(//home/kim-yeonghoon/**)"
+      "Read(//home/kim-yeonghoon/**)",
+      "Bash(git reflog:*)",
+      "Bash(git gc:*)"
     ],
     "deny": [],
     "ask": []
