@@ -403,9 +403,7 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
         )}
 
         {/* 지역별 사진 분포 */}
-        {authState?.isAuthenticated && authToken && (
-          <LocationDistribution authToken={authToken} />
-        )}
+        <LocationDistribution authToken={authToken || null} />
 
         {photos.length === 0 ? (
           <div className="empty-state">

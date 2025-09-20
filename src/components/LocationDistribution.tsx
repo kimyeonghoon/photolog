@@ -20,20 +20,21 @@ const LocationDistribution: React.FC<LocationDistributionProps> = ({ authToken }
   const [error, setError] = useState<string | null>(null);
 
   const fetchLocationDistribution = async () => {
-    if (!authToken) {
-      setError('로그인이 필요합니다');
-      return;
-    }
-
     setLoading(true);
     setError(null);
 
     try {
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json'
+      };
+
+      // authToken이 있으면 Authorization 헤더 추가
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+      }
+
       const response = await fetch('/api/photos/by-location', {
-        headers: {
-          'Authorization': `Bearer ${authToken}`,
-          'Content-Type': 'application/json'
-        }
+        headers
       });
 
       if (!response.ok) {

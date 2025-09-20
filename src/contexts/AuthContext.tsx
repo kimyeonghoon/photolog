@@ -19,6 +19,7 @@ interface AuthContextType extends AuthState {
   verifyCode: (code: string) => Promise<{ success: boolean; message: string }>
   logout: () => void
   checkAuthStatus: () => void
+  getToken: () => string | null
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -138,12 +139,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return () => clearInterval(interval)
   }, [authState.isAuthenticated])
 
+  // 토큰 가져오기
+  const getToken = (): string | null => {
+    return authAPI.getToken()
+  }
+
   const contextValue: AuthContextType = {
     ...authState,
     login,
     verifyCode,
     logout,
     checkAuthStatus,
+    getToken,
   }
 
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>

@@ -39,7 +39,7 @@ interface PhotoUploadData {
 
 
 function MainApp() {
-  const { isAuthenticated, isLoading: authLoading, logout } = useAuth()
+  const { isAuthenticated, isLoading: authLoading, logout, getToken } = useAuth()
   const [uploadedPhotos, setUploadedPhotos] = useState<UnifiedPhotoData[]>([])
   const [currentPage, setCurrentPage] = useState<'home' | 'upload' | 'map'>('home')
   const [isUploading, setIsUploading] = useState(false)
@@ -479,6 +479,7 @@ function MainApp() {
           statsData={statsData}
           sortOrder={sortOrder}
           onSortOrderChange={handleSortOrderChange}
+          authToken={getToken()}
         />
       ) : currentPage === 'upload' ? (
         <UploadPage

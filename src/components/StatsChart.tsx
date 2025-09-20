@@ -6,12 +6,7 @@ interface StatsChartProps {
   photos: UnifiedPhotoData[];
 }
 
-interface LocationStats {
-  region: string;
-  count: number;
-  percentage: number;
-  color: string;
-}
+// LocationStats는 LocationDistribution 컴포넌트에서 처리
 
 interface YearlyStats {
   year: number;
@@ -33,50 +28,7 @@ export const StatsChart: React.FC<StatsChartProps> = ({ photos }) => {
     // EXIF 촬영시간이 없으면 업로드 시간 사용
     return new Date(photo.uploadedAt || Date.now());
   };
-  // 지역별 통계 계산 (위도/경도 기반 대략적 지역 분류)
-  const getRegionStats = (): LocationStats[] => {
-    const photosWithLocation = photos.filter(p => p.location);
-    if (photosWithLocation.length === 0) return [];
-
-    const regions: { [key: string]: number } = {};
-    
-    photosWithLocation.forEach(photo => {
-      const lat = photo.location!.latitude;
-      const lng = photo.location!.longitude;
-      
-      let region = '기타';
-      
-      // 한국 지역 분류 (대략적)
-      if (lat >= 33 && lat <= 38.5 && lng >= 124 && lng <= 132) {
-        if (lat >= 33 && lat <= 33.8 && lng >= 126 && lng <= 127) {
-          region = '제주도';
-        } else if (lat >= 35.8 && lat <= 37.7 && lng >= 126.3 && lng <= 127.6) {
-          region = '수도권';
-        } else if (lat >= 36.8 && lat <= 38.5 && lng >= 127.3 && lng <= 128.9) {
-          region = '강원도';
-        } else if (lat >= 35.7 && lat <= 37.0 && lng >= 127.6 && lng <= 129.6) {
-          region = '경상도';
-        } else if (lat >= 34.3 && lat <= 35.8 && lng >= 126.1 && lng <= 127.5) {
-          region = '전라도';
-        } else if (lat >= 36.0 && lat <= 37.0 && lng >= 126.3 && lng <= 127.6) {
-          region = '충청도';
-        }
-      }
-      
-      regions[region] = (regions[region] || 0) + 1;
-    });
-
-    const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#84cc16'];
-    
-    return Object.entries(regions)
-      .map(([region, count], index) => ({
-        region,
-        count,
-        percentage: Math.round((count / photosWithLocation.length) * 100),
-        color: colors[index % colors.length]
-      }))
-      .sort((a, b) => b.count - a.count);
-  };
+  // 지역별 통계는 LocationDistribution 컴포넌트에서 처리
 
   // 년도별 통계 계산 (실제 촬영시간 기준)
   const getYearlyStats = (): YearlyStats[] => {
@@ -121,7 +73,7 @@ export const StatsChart: React.FC<StatsChartProps> = ({ photos }) => {
     }));
   };
 
-  const regionStats = getRegionStats();
+  // 지역별 통계는 LocationDistribution 컴포넌트에서 처리
   const yearlyStats = getYearlyStats();
   const monthlyTrend = getMonthlyTrend();
   const maxMonthly = Math.max(...monthlyTrend.map(m => m.count));
@@ -138,44 +90,7 @@ export const StatsChart: React.FC<StatsChartProps> = ({ photos }) => {
 
   return (
     <div className="stats-chart">
-      {/* 지역별 분포 차트 */}
-      {regionStats.length > 0 && (
-        <div className="chart-section">
-          <h3>🌍 지역별 사진 분포</h3>
-          <div className="region-chart">
-            <div className="pie-chart">
-              {regionStats.map((region, index) => {
-                const angle = (region.percentage / 100) * 360;
-                const prevAngles = regionStats.slice(0, index).reduce((sum, r) => sum + (r.percentage / 100) * 360, 0);
-                
-                return (
-                  <div
-                    key={region.region}
-                    className="pie-slice"
-                    style={{
-                      background: `conic-gradient(${region.color} 0deg ${angle}deg, transparent ${angle}deg 360deg)`,
-                      transform: `rotate(${prevAngles}deg)`
-                    }}
-                  />
-                );
-              })}
-            </div>
-            <div className="region-legend">
-              {regionStats.map(region => (
-                <div key={region.region} className="legend-item">
-                  <div 
-                    className="legend-color"
-                    style={{ backgroundColor: region.color }}
-                  />
-                  <span className="legend-text">
-                    {region.region} ({region.count}장, {region.percentage}%)
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* 지역별 분포는 LocationDistribution 컴포넌트에서 처리됩니다 */}
 
       {/* 년도별 업로드 통계 */}
       {yearlyStats.length > 0 && (
@@ -241,15 +156,7 @@ export const StatsChart: React.FC<StatsChartProps> = ({ photos }) => {
             </div>
           </div>
           
-          {regionStats.length > 0 && (
-            <div className="summary-item">
-              <div className="summary-icon">🌍</div>
-              <div className="summary-content">
-                <div className="summary-label">주요 여행지</div>
-                <div className="summary-value">{regionStats[0].region}</div>
-              </div>
-            </div>
-          )}
+          {/* 주요 여행지는 LocationDistribution에서 확인하세요 */}
           
           <div className="summary-item">
             <div className="summary-icon">📸</div>

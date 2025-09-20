@@ -57,7 +57,12 @@
       "Bash(find:*)",
       "Bash(npm run typecheck:*)",
       "Bash(npx tsc:*)",
-      "Bash(pip3 install:*)"
+      "Bash(pip3 install:*)",
+      "Bash(cat:*)",
+      "Bash(grep:*)",
+      "Bash(tr:*)",
+      "Read(//home/kim-yeonghoon/workspace/**)",
+      "Read(//home/kim-yeonghoon/**)"
     ],
     "deny": [],
     "ask": []
