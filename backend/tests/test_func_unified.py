@@ -694,5 +694,48 @@ def get_photos_by_location() -> dict:
         return create_api_response(500, None, f"지역별 분포 조회 중 오류: {str(e)}")
 
 
+def get_photos_by_date() -> dict:
+    """
+    년도별/월별 사진 통계 조회 API 함수
+
+    Returns:
+        dict: 년도별, 월별 사진 통계 정보
+    """
+    try:
+        storage_type = os.getenv('STORAGE_TYPE', 'OCI')
+        service = UnifiedStorageService(storage_type)
+
+        # 데이터베이스 클라이언트가 있는 경우 데이터베이스에서 날짜별 통계 조회
+        if hasattr(service, 'db_client') and service.db_client:
+            print("📅 데이터베이스에서 년도별/월별 사진 통계 조회 중...")
+            result = service.db_client.get_photos_by_date()
+
+            if result['success']:
+                yearly_stats = result.get('yearly_stats', [])
+                monthly_stats = result.get('monthly_stats', [])
+                print(f"✅ 날짜별 통계 조회 성공:")
+                print(f"   년도별 통계: {len(yearly_stats)}개 년도")
+                print(f"   월별 통계: {len(monthly_stats)}개 월")
+
+                # 로그로 년도별 통계 출력
+                for year_data in yearly_stats:
+                    year = year_data.get('year', 'Unknown')
+                    count = year_data.get('photo_count', 0)
+                    print(f"   {year}년: {count}장")
+
+                return create_api_response(200, {
+                    'yearly_stats': yearly_stats,
+                    'monthly_stats': monthly_stats
+                }, "년도별/월별 통계 조회 성공")
+            else:
+                return create_api_response(500, None, f"날짜별 통계 조회 실패: {result.get('error')}")
+        else:
+            return create_api_response(500, None, "데이터베이스 클라이언트를 사용할 수 없습니다")
+
+    except Exception as e:
+        print(f"❌ 날짜별 통계 조회 중 오류: {str(e)}")
+        return create_api_response(500, None, f"날짜별 통계 조회 중 오류: {str(e)}")
+
+
 if __name__ == "__main__":
     main_test()

@@ -624,3 +624,58 @@ class MySQLClient:
                 "error": str(e),
                 "distribution": []
             }
+
+    def get_photos_by_date(self) -> Dict[str, Any]:
+        """
+        년도별/월별 사진 통계 조회
+
+        Returns:
+            년도별, 월별 사진 통계 정보
+        """
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor(pymysql.cursors.DictCursor)
+
+                # 년도별 통계 조회
+                yearly_sql = """
+                SELECT
+                    YEAR(COALESCE(taken_timestamp, upload_timestamp)) as year,
+                    COUNT(*) as photo_count
+                FROM photos
+                WHERE COALESCE(taken_timestamp, upload_timestamp) IS NOT NULL
+                GROUP BY YEAR(COALESCE(taken_timestamp, upload_timestamp))
+                ORDER BY year DESC
+                """
+
+                cursor.execute(yearly_sql)
+                yearly_results = cursor.fetchall()
+                yearly_stats = [{"year": int(row['year']), "photo_count": int(row['photo_count'])} for row in yearly_results]
+
+                # 월별 통계 조회 (1월~12월)
+                monthly_sql = """
+                SELECT
+                    MONTH(COALESCE(taken_timestamp, upload_timestamp)) as month,
+                    COUNT(*) as photo_count
+                FROM photos
+                WHERE COALESCE(taken_timestamp, upload_timestamp) IS NOT NULL
+                GROUP BY MONTH(COALESCE(taken_timestamp, upload_timestamp))
+                ORDER BY month
+                """
+
+                cursor.execute(monthly_sql)
+                monthly_results = cursor.fetchall()
+                monthly_stats = [{"month": int(row['month']), "photo_count": int(row['photo_count'])} for row in monthly_results]
+
+                return {
+                    "success": True,
+                    "yearly_stats": yearly_stats,
+                    "monthly_stats": monthly_stats
+                }
+
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "yearly_stats": [],
+                "monthly_stats": []
+            }

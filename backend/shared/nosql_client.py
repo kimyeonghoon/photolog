@@ -405,3 +405,75 @@ class OCINoSQLClient:
                 "error": str(e),
                 "distribution": []
             }
+
+    def get_photos_by_date(self) -> Dict[str, Any]:
+        """
+        년도별/월별 사진 통계 조회 (NoSQL용 메모리 처리)
+
+        Returns:
+            년도별, 월별 사진 통계 정보
+        """
+        try:
+            # NoSQL은 GROUP BY가 제한적이므로 모든 사진을 가져와서 메모리에서 처리
+            photos_result = self.list_photos(limit=1000)  # 충분히 큰 limit
+
+            if not photos_result.get('success', False):
+                return {
+                    "success": False,
+                    "error": "사진 목록 조회 실패",
+                    "yearly_stats": [],
+                    "monthly_stats": []
+                }
+
+            photos = photos_result.get('photos', [])
+            yearly_counts = {}
+            monthly_counts = {}
+
+            for photo in photos:
+                # taken_timestamp 또는 upload_timestamp에서 날짜 추출
+                timestamp = photo.get('taken_timestamp') or photo.get('upload_timestamp')
+                if not timestamp:
+                    continue
+
+                try:
+                    from datetime import datetime
+                    # ISO 형식 문자열을 datetime 객체로 변환
+                    if isinstance(timestamp, str):
+                        dt = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+                    else:
+                        dt = timestamp
+
+                    year = dt.year
+                    month = dt.month
+
+                    # 년도별 카운트
+                    yearly_counts[year] = yearly_counts.get(year, 0) + 1
+
+                    # 월별 카운트
+                    monthly_counts[month] = monthly_counts.get(month, 0) + 1
+
+                except (ValueError, TypeError) as e:
+                    print(f"날짜 파싱 오류: {timestamp} - {e}")
+                    continue
+
+            # 년도별 통계 정렬 (최신 연도부터)
+            yearly_stats = [{"year": year, "photo_count": count}
+                          for year, count in sorted(yearly_counts.items(), reverse=True)]
+
+            # 월별 통계 정렬 (1월부터 12월까지)
+            monthly_stats = [{"month": month, "photo_count": count}
+                           for month, count in sorted(monthly_counts.items())]
+
+            return {
+                "success": True,
+                "yearly_stats": yearly_stats,
+                "monthly_stats": monthly_stats
+            }
+
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "yearly_stats": [],
+                "monthly_stats": []
+            }
