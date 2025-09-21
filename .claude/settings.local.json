@@ -64,7 +64,8 @@
       "Read(//home/kim-yeonghoon/workspace/**)",
       "Read(//home/kim-yeonghoon/**)",
       "Bash(git reflog:*)",
-      "Bash(git gc:*)"
+      "Bash(git gc:*)",
+      "Bash(__NEW_LINE__ PHOTO_ID=\"34a17359-0f38-450f-8798-96f8cf408d8e\")"
     ],
     "deny": [],
     "ask": []
