@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>안드로이드 GPS 보존 기능 테스트</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .test-section {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .result {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 14px;
+        }
+
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        .android {
+            background: #4CAF50;
+        }
+
+        .ios {
+            background: #FF9800;
+        }
+
+        .desktop {
+            background: #9C27B0;
+        }
+
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <h1>📱 안드로이드 GPS 보존 기능 테스트</h1>
+
+    <div class="test-section">
+        <h2>1. 기기 감지 테스트</h2>
+        <p>현재 User Agent를 분석하여 안드로이드 기기인지 확인합니다.</p>
+        <button onclick="testDeviceDetection()">기기 감지 테스트</button>
+        <div id="device-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. User Agent 시뮬레이션</h2>
+        <p>다양한 기기의 User Agent를 시뮬레이션하여 감지 로직을 테스트합니다.</p>
+        <button class="android" onclick="simulateUserAgent('android')">안드로이드 시뮬레이션</button>
+        <button class="ios" onclick="simulateUserAgent('ios')">iOS 시뮬레이션</button>
+        <button class="desktop" onclick="simulateUserAgent('desktop')">데스크톱 시뮬레이션</button>
+        <div id="simulation-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. GPS 보존 정책 테스트</h2>
+        <p>기기별로 require_metadata_first 옵션이 올바르게 설정되는지 확인합니다.</p>
+        <button onclick="testGPSPreservationPolicy()">GPS 보존 정책 테스트</button>
+        <div id="gps-policy-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. API 호출 시뮬레이션</h2>
+        <p>실제 API 호출에서 require_metadata_first 파라미터가 전달되는지 확인합니다.</p>
+        <button onclick="simulateAPICall()">API 호출 시뮬레이션</button>
+        <div id="api-result" class="result"></div>
+    </div>
+
+    <script>
+        // 기기 감지 유틸리티 (실제 프론트엔드 코드와 동일)
+        function isAndroidDevice() {
+            const userAgent = navigator.userAgent || '';
+            const hasAndroid = /Android/i.test(userAgent);
+            const isMobileChrome = /Chrome/.test(userAgent) && /Mobile/.test(userAgent);
+            return hasAndroid || (isMobileChrome && hasAndroid);
+        }
+
+        function requiresMetadataFirst() {
+            return isAndroidDevice();
+        }
+
+        function logDeviceInfo() {
+            const isAndroid = isAndroidDevice();
+            const needsMetadataFirst = requiresMetadataFirst();
+
+            return {
+                userAgent: navigator.userAgent,
+                isAndroid,
+                needsMetadataFirst,
+                platform: navigator.platform,
+                vendor: navigator.vendor
+            };
+        }
+
+        // 테스트 함수들
+        function testDeviceDetection() {
+            const deviceInfo = logDeviceInfo();
+            const result = document.getElementById('device-result');
+
+            result.innerHTML = `현재 기기 정보:
+User Agent: ${deviceInfo.userAgent}
+Platform: ${deviceInfo.platform}
+Vendor: ${deviceInfo.vendor}
+안드로이드 기기: ${deviceInfo.isAndroid ? '✅ 예' : '❌ 아니오'}
+GPS 보존 필요: ${deviceInfo.needsMetadataFirst ? '✅ 예' : '❌ 아니오'}`;
+
+            const statusDiv = document.createElement('div');
+            statusDiv.className = `status ${deviceInfo.isAndroid ? 'success' : 'warning'}`;
+            statusDiv.textContent = deviceInfo.isAndroid
+                ? '✅ 안드로이드 기기가 감지되어 GPS 보존 모드가 활성화됩니다.'
+                : '⚠️ 안드로이드 기기가 아니므로 일반 업로드 모드를 사용합니다.';
+
+            result.appendChild(statusDiv);
+        }
+
+        function simulateUserAgent(deviceType) {
+            const userAgents = {
+                android: 'Mozilla/5.0 (Linux; Android 13; SM-G998B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+                ios: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Mobile/15E148 Safari/604.1',
+                desktop: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            };
+
+            const originalUserAgent = navigator.userAgent;
+
+            // User Agent 시뮬레이션을 위한 함수
+            function testWithUserAgent(ua) {
+                const hasAndroid = /Android/i.test(ua);
+                const isMobileChrome = /Chrome/.test(ua) && /Mobile/.test(ua);
+                const isAndroid = hasAndroid || (isMobileChrome && hasAndroid);
+                const needsMetadataFirst = isAndroid;
+
+                return {
+                    userAgent: ua,
+                    isAndroid,
+                    needsMetadataFirst
+                };
+            }
+
+            const testResult = testWithUserAgent(userAgents[deviceType]);
+            const result = document.getElementById('simulation-result');
+
+            result.innerHTML = `${deviceType.toUpperCase()} 시뮬레이션 결과:
+User Agent: ${testResult.userAgent}
+안드로이드 기기: ${testResult.isAndroid ? '✅ 예' : '❌ 아니오'}
+GPS 보존 필요: ${testResult.needsMetadataFirst ? '✅ 예' : '❌ 아니오'}`;
+
+            const statusDiv = document.createElement('div');
+            statusDiv.className = `status ${testResult.isAndroid ? 'success' : 'warning'}`;
+            statusDiv.textContent = testResult.isAndroid
+                ? '✅ 안드로이드 기기로 감지되어 require_metadata_first=true가 설정됩니다.'
+                : '⚠️ 안드로이드 기기가 아니므로 require_metadata_first=false가 설정됩니다.';
+
+            result.appendChild(statusDiv);
+        }
+
+        function testGPSPreservationPolicy() {
+            const devices = [
+                { name: '갤럭시 S23', ua: 'Mozilla/5.0 (Linux; Android 13; SM-G998B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36' },
+                { name: '픽셀 7', ua: 'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36' },
+                { name: 'iPhone 15', ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Mobile/15E148 Safari/604.1' },
+                { name: 'iPad', ua: 'Mozilla/5.0 (iPad; CPU OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Mobile/15E148 Safari/604.1' },
+                { name: 'Chrome 데스크톱', ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' }
+            ];
+
+            let testResults = '기기별 GPS 보존 정책 테스트 결과:\\n\\n';
+
+            devices.forEach(device => {
+                const hasAndroid = /Android/i.test(device.ua);
+                const isMobileChrome = /Chrome/.test(device.ua) && /Mobile/.test(device.ua);
+                const isAndroid = hasAndroid || (isMobileChrome && hasAndroid);
+                const needsMetadataFirst = isAndroid;
+
+                testResults += `${device.name}:
+  안드로이드: ${isAndroid ? 'YES' : 'NO'}
+  require_metadata_first: ${needsMetadataFirst ? 'TRUE' : 'FALSE'}
+  정책: ${needsMetadataFirst ? 'GPS 보존 모드' : '일반 업로드 모드'}
+
+`;
+            });
+
+            document.getElementById('gps-policy-result').textContent = testResults;
+        }
+
+        function simulateAPICall() {
+            const currentDevice = logDeviceInfo();
+
+            // API 호출 데이터 시뮬레이션
+            const mockFileData = {
+                file: 'data:image/jpeg;base64,/9j/4AAQ...',
+                description: 'GPS 보존 테스트',
+                thumbnails: {},
+                exifData: {
+                    timestamp: '2023-08-15T14:30:00Z',
+                    latitude: 33.5563,
+                    longitude: 126.7958
+                },
+                location: {
+                    latitude: 33.5563,
+                    longitude: 126.7958
+                },
+                require_metadata_first: currentDevice.needsMetadataFirst
+            };
+
+            const apiRequest = {
+                method: 'POST',
+                files: [mockFileData]
+            };
+
+            const result = document.getElementById('api-result');
+            result.innerHTML = `API 호출 시뮬레이션:
+
+요청 데이터:
+${JSON.stringify(apiRequest, null, 2)}
+
+기기 감지 결과:
+- 안드로이드 기기: ${currentDevice.isAndroid ? 'YES' : 'NO'}
+- require_metadata_first: ${currentDevice.needsMetadataFirst ? 'TRUE' : 'FALSE'}
+
+백엔드 처리 예상:
+${currentDevice.needsMetadataFirst
+    ? '📱 안드로이드 기기 감지: GPS 보존을 위한 메타데이터 우선 저장 모드 활성화'
+    : '💻 일반 기기: 표준 업로드 프로세스 사용'
+}`;
+
+            const statusDiv = document.createElement('div');
+            statusDiv.className = `status ${currentDevice.needsMetadataFirst ? 'success' : 'warning'}`;
+            statusDiv.textContent = currentDevice.needsMetadataFirst
+                ? '✅ GPS 보존을 위한 메타데이터 우선 저장이 적용됩니다.'
+                : '⚠️ 일반 업로드 프로세스가 사용됩니다.';
+
+            result.appendChild(statusDiv);
+        }
+
+        // 페이지 로드 시 자동으로 기기 감지 테스트 실행
+        window.onload = function() {
+            testDeviceDetection();
+        };
+    </script>
+</body>
+</html>

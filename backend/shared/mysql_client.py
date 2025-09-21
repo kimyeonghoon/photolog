@@ -188,6 +188,48 @@ class MySQLClient:
                 "error": str(e)
             }
 
+    def update_photo_urls(self, photo_id: str, file_url: str, thumbnail_urls: Dict[str, str]) -> Dict[str, Any]:
+        """
+        사진 URL 정보 업데이트
+
+        Args:
+            photo_id: 사진 ID
+            file_url: 원본 파일 URL
+            thumbnail_urls: 썸네일 URL 딕셔너리
+
+        Returns:
+            업데이트 결과
+        """
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+
+                # filename 생성 (URL에서 추출)
+                filename = file_url.split('/')[-1] if file_url else None
+
+                # thumbnail_urls JSON 직렬화
+                thumbnail_urls_json = json.dumps(thumbnail_urls) if thumbnail_urls else None
+
+                sql = """
+                UPDATE photos
+                SET filename = %s, file_url = %s, thumbnail_urls_json = %s
+                WHERE id = %s
+                """
+                cursor.execute(sql, (filename, file_url, thumbnail_urls_json, photo_id))
+                conn.commit()
+
+                return {
+                    "success": True,
+                    "photo_id": photo_id,
+                    "affected_rows": cursor.rowcount
+                }
+
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e)
+            }
+
     def update_upload_status(self, photo_id: str, status: str) -> Dict[str, Any]:
         """
         사진 업로드 상태 업데이트
