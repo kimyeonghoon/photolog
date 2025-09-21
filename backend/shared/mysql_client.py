@@ -679,25 +679,25 @@ class MySQLClient:
             with self.get_connection() as conn:
                 cursor = conn.cursor(pymysql.cursors.DictCursor)
 
-                # 년도별 통계 조회 (JSON 필드에서 타임스탬프 추출)
+                # 년도별 통계 조회 (EXIF 촬영일 우선, JSON 필드에서 타임스탬프 추출)
                 yearly_sql = """
                 SELECT
                     YEAR(COALESCE(
+                        STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(exif_data_json, '$.timestamp')), '%Y-%m-%dT%H:%i:%s.%fZ'),
                         taken_timestamp,
-                        upload_timestamp,
-                        STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(exif_data_json, '$.timestamp')), '%Y-%m-%dT%H:%i:%s.%fZ')
+                        upload_timestamp
                     )) as year,
                     COUNT(*) as photo_count
                 FROM photos
                 WHERE COALESCE(
+                    STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(exif_data_json, '$.timestamp')), '%Y-%m-%dT%H:%i:%s.%fZ'),
                     taken_timestamp,
-                    upload_timestamp,
-                    STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(exif_data_json, '$.timestamp')), '%Y-%m-%dT%H:%i:%s.%fZ')
+                    upload_timestamp
                 ) IS NOT NULL
                 GROUP BY YEAR(COALESCE(
+                    STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(exif_data_json, '$.timestamp')), '%Y-%m-%dT%H:%i:%s.%fZ'),
                     taken_timestamp,
-                    upload_timestamp,
-                    STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(exif_data_json, '$.timestamp')), '%Y-%m-%dT%H:%i:%s.%fZ')
+                    upload_timestamp
                 ))
                 ORDER BY year DESC
                 """
@@ -706,25 +706,25 @@ class MySQLClient:
                 yearly_results = cursor.fetchall()
                 yearly_stats = [{"year": int(row['year']), "photo_count": int(row['photo_count'])} for row in yearly_results]
 
-                # 월별 통계 조회 (1월~12월, JSON 필드에서 타임스탬프 추출)
+                # 월별 통계 조회 (EXIF 촬영일 우선, JSON 필드에서 타임스탬프 추출)
                 monthly_sql = """
                 SELECT
                     MONTH(COALESCE(
+                        STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(exif_data_json, '$.timestamp')), '%Y-%m-%dT%H:%i:%s.%fZ'),
                         taken_timestamp,
-                        upload_timestamp,
-                        STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(exif_data_json, '$.timestamp')), '%Y-%m-%dT%H:%i:%s.%fZ')
+                        upload_timestamp
                     )) as month,
                     COUNT(*) as photo_count
                 FROM photos
                 WHERE COALESCE(
+                    STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(exif_data_json, '$.timestamp')), '%Y-%m-%dT%H:%i:%s.%fZ'),
                     taken_timestamp,
-                    upload_timestamp,
-                    STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(exif_data_json, '$.timestamp')), '%Y-%m-%dT%H:%i:%s.%fZ')
+                    upload_timestamp
                 ) IS NOT NULL
                 GROUP BY MONTH(COALESCE(
+                    STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(exif_data_json, '$.timestamp')), '%Y-%m-%dT%H:%i:%s.%fZ'),
                     taken_timestamp,
-                    upload_timestamp,
-                    STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(exif_data_json, '$.timestamp')), '%Y-%m-%dT%H:%i:%s.%fZ')
+                    upload_timestamp
                 ))
                 ORDER BY month
                 """

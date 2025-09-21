@@ -181,10 +181,10 @@ export const StatsChart: React.FC<StatsChartProps> = ({ photos }) => {
 
       {/* 지역별 분포는 LocationDistribution 컴포넌트에서 처리됩니다 */}
 
-      {/* 년도별 업로드 통계 */}
+      {/* 년도별 촬영 통계 */}
       {yearlyStats.length > 0 && (
         <div className="chart-section">
-          <h3>📅 년도별 업로드 현황</h3>
+          <h3>📅 년도별 촬영 현황</h3>
           <div className="yearly-chart">
             {yearlyStats.map(year => (
               <div key={year.year} className="year-bar">
@@ -204,9 +204,9 @@ export const StatsChart: React.FC<StatsChartProps> = ({ photos }) => {
         </div>
       )}
 
-      {/* 월별 업로드 트렌드 */}
+      {/* 월별 촬영 트렌드 */}
       <div className="chart-section">
-        <h3>📈 월별 업로드 트렌드</h3>
+        <h3>📈 월별 촬영 트렌드</h3>
         <div className="monthly-chart">
           <div className="monthly-bars">
             {monthlyTrend.map(month => (
@@ -250,7 +250,7 @@ export const StatsChart: React.FC<StatsChartProps> = ({ photos }) => {
           <div className="summary-item">
             <div className="summary-icon">📸</div>
             <div className="summary-content">
-              <div className="summary-label">월 평균 업로드</div>
+              <div className="summary-label">월 평균 촬영</div>
               <div className="summary-value">
                 {(() => {
                   if (useServerStats && serverStats) {
