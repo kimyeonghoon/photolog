@@ -419,23 +419,38 @@ class UnifiedStorageService:
 
             # 3단계: URL 정보 및 상태를 'completed'로 업데이트
             print(f"✅ 3단계: URL 정보 및 상태를 'completed'로 업데이트")
+            print(f"   photo_id: {photo_id}")
+            print(f"   original_result['url']: {original_result['url']}")
+            print(f"   thumbnail_urls: {thumbnail_urls}")
+
             if self.db_client:
+                print(f"   db_client 존재함: {type(self.db_client).__name__}")
                 try:
                     # URL 정보 업데이트
+                    print(f"📝 update_photo_urls 호출 전...")
                     url_result = self.db_client.update_photo_urls(photo_id, original_result["url"], thumbnail_urls)
+                    print(f"📝 update_photo_urls 호출 후, 결과: {url_result}")
+
                     if not url_result["success"]:
                         print(f"⚠️ URL 정보 업데이트 실패: {url_result.get('error')}")
                     else:
-                        print(f"✅ URL 정보 업데이트 완료")
+                        print(f"✅ URL 정보 업데이트 완료, affected_rows: {url_result.get('affected_rows')}")
 
                     # 상태 업데이트
+                    print(f"📝 update_upload_status 호출 전...")
                     status_result = self.db_client.update_upload_status(photo_id, 'completed')
+                    print(f"📝 update_upload_status 호출 후, 결과: {status_result}")
+
                     if not status_result["success"]:
                         print(f"⚠️ 상태 업데이트 실패: {status_result.get('error')}")
                     else:
                         print(f"✅ 업로드 상태 'completed'로 업데이트 완료")
                 except Exception as e:
                     print(f"⚠️ 업데이트 중 오류: {e}")
+                    import traceback
+                    traceback.print_exc()
+            else:
+                print(f"❌ db_client가 None입니다!")
 
             # 업로드 결과
             upload_result = {
