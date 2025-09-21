@@ -200,45 +200,31 @@ class MySQLClient:
         Returns:
             업데이트 결과
         """
-        print(f"🔄 update_photo_urls 호출됨:")
-        print(f"   photo_id: {photo_id}")
-        print(f"   file_url: {file_url}")
-        print(f"   thumbnail_urls: {thumbnail_urls}")
-
         try:
             with self.get_connection() as conn:
                 cursor = conn.cursor()
 
                 # filename 생성 (URL에서 추출)
                 filename = file_url.split('/')[-1] if file_url else None
-                print(f"   추출된 filename: {filename}")
 
                 # thumbnail_urls JSON 직렬화
                 thumbnail_urls_json = json.dumps(thumbnail_urls) if thumbnail_urls else None
-                print(f"   thumbnail_urls_json: {thumbnail_urls_json}")
 
                 sql = """
                 UPDATE photos
                 SET filename = %s, file_url = %s, thumbnail_urls_json = %s
                 WHERE id = %s
                 """
-                print(f"   SQL 쿼리 실행: {sql}")
-                print(f"   파라미터: ({filename}, {file_url}, {thumbnail_urls_json}, {photo_id})")
-
                 cursor.execute(sql, (filename, file_url, thumbnail_urls_json, photo_id))
                 conn.commit()
-
-                affected_rows = cursor.rowcount
-                print(f"   ✅ 업데이트 성공, affected_rows: {affected_rows}")
 
                 return {
                     "success": True,
                     "photo_id": photo_id,
-                    "affected_rows": affected_rows
+                    "affected_rows": cursor.rowcount
                 }
 
         except Exception as e:
-            print(f"   ❌ update_photo_urls 오류: {str(e)}")
             return {
                 "success": False,
                 "error": str(e)
