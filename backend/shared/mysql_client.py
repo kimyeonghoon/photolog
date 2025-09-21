@@ -143,7 +143,7 @@ class MySQLClient:
                 """
 
                 params = {
-                    'id': photo_data.get('id'),
+                    'id': photo_data.get('id') or photo_data.get('photo_id'),
                     'filename': photo_data.get('filename'),
                     'description': photo_data.get('description'),
                     'file_url': photo_data.get('file_url'),
@@ -178,7 +178,7 @@ class MySQLClient:
 
                 return {
                     "success": True,
-                    "photo_id": photo_data['id'],
+                    "photo_id": photo_data.get('id') or photo_data.get('photo_id'),
                     "affected_rows": cursor.rowcount
                 }
 
