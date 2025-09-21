@@ -408,14 +408,14 @@ export const HomePage: React.FC<HomePageProps> = ({ photos, onUploadClick, onMap
                 </div>
                 
                 <div className="detail-item">
-                  <span className="detail-label">📅 첫 사진:</span>
+                  <span className="detail-label">📅 처음 촬영:</span>
                   <span className="detail-value">
                     {stats.firstPhotoDate ? new Date(stats.firstPhotoDate).toLocaleDateString('ko-KR') : 'N/A'}
                   </span>
                 </div>
 
                 <div className="detail-item">
-                  <span className="detail-label">🕒 최근 사진:</span>
+                  <span className="detail-label">🕒 최근 촬영:</span>
                   <span className="detail-value">
                     {stats.latestPhotoDate ? new Date(stats.latestPhotoDate).toLocaleDateString('ko-KR') : 'N/A'}
                   </span>

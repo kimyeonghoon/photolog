@@ -100,14 +100,14 @@ class MySQLClient:
                 sql = """
                 INSERT INTO photos (
                     id, filename, description, file_url, file_size, content_type,
-                    upload_timestamp, taken_timestamp, travel_date,
+                    upload_timestamp, upload_status, taken_timestamp, travel_date,
                     latitude, longitude, location_address, location_city, location_country,
                     thumbnail_small, thumbnail_medium, thumbnail_large,
                     camera_make, camera_model, iso_speed, aperture, shutter_speed, focal_length,
                     thumbnail_urls_json, location_json, exif_data_json, tags
                 ) VALUES (
                     %(id)s, %(filename)s, %(description)s, %(file_url)s, %(file_size)s, %(content_type)s,
-                    %(upload_timestamp)s, %(taken_timestamp)s, %(travel_date)s,
+                    %(upload_timestamp)s, %(upload_status)s, %(taken_timestamp)s, %(travel_date)s,
                     %(latitude)s, %(longitude)s, %(location_address)s, %(location_city)s, %(location_country)s,
                     %(thumbnail_small)s, %(thumbnail_medium)s, %(thumbnail_large)s,
                     %(camera_make)s, %(camera_model)s, %(iso_speed)s, %(aperture)s, %(shutter_speed)s, %(focal_length)s,
@@ -119,6 +119,7 @@ class MySQLClient:
                     file_size = VALUES(file_size),
                     content_type = VALUES(content_type),
                     upload_timestamp = VALUES(upload_timestamp),
+                    upload_status = VALUES(upload_status),
                     taken_timestamp = VALUES(taken_timestamp),
                     travel_date = VALUES(travel_date),
                     latitude = VALUES(latitude),
@@ -149,6 +150,7 @@ class MySQLClient:
                     'file_size': photo_data.get('file_size'),
                     'content_type': photo_data.get('content_type'),
                     'upload_timestamp': photo_data.get('upload_timestamp'),
+                    'upload_status': photo_data.get('upload_status', 'completed'),
                     'taken_timestamp': photo_data.get('taken_timestamp'),
                     'travel_date': photo_data.get('travel_date'),
                     'latitude': photo_data.get('latitude'),
@@ -184,6 +186,82 @@ class MySQLClient:
             return {
                 "success": False,
                 "error": str(e)
+            }
+
+    def update_upload_status(self, photo_id: str, status: str) -> Dict[str, Any]:
+        """
+        사진 업로드 상태 업데이트
+
+        Args:
+            photo_id: 사진 ID
+            status: 업로드 상태 ('uploading', 'completed', 'failed')
+
+        Returns:
+            업데이트 결과
+        """
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+
+                sql = "UPDATE photos SET upload_status = %s WHERE id = %s"
+                cursor.execute(sql, (status, photo_id))
+                conn.commit()
+
+                return {
+                    "success": True,
+                    "photo_id": photo_id,
+                    "status": status,
+                    "affected_rows": cursor.rowcount
+                }
+
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e)
+            }
+
+    def cleanup_failed_uploads(self, hours_old: int = 1) -> Dict[str, Any]:
+        """
+        오래된 미완료 업로드 정리
+
+        Args:
+            hours_old: 정리할 업로드 경과 시간 (시간 단위)
+
+        Returns:
+            정리 결과
+        """
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor(pymysql.cursors.DictCursor)
+
+                # 오래된 'uploading' 상태 사진 조회
+                sql = """
+                SELECT id, filename FROM photos
+                WHERE upload_status = 'uploading'
+                AND upload_timestamp < DATE_SUB(NOW(), INTERVAL %s HOUR)
+                """
+                cursor.execute(sql, (hours_old,))
+                failed_uploads = cursor.fetchall()
+
+                if failed_uploads:
+                    # 실패 상태로 변경
+                    photo_ids = [photo['id'] for photo in failed_uploads]
+                    placeholders = ','.join(['%s'] * len(photo_ids))
+                    update_sql = f"UPDATE photos SET upload_status = 'failed' WHERE id IN ({placeholders})"
+                    cursor.execute(update_sql, photo_ids)
+                    conn.commit()
+
+                return {
+                    "success": True,
+                    "cleaned_count": len(failed_uploads),
+                    "failed_uploads": [{"id": p['id'], "filename": p['filename']} for p in failed_uploads]
+                }
+
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "cleaned_count": 0
             }
 
     def get_photo_metadata(self, photo_id: str) -> Optional[Dict[str, Any]]:
@@ -366,8 +444,16 @@ class MySQLClient:
                     COUNT(CASE WHEN latitude IS NOT NULL AND longitude IS NOT NULL THEN 1 END) as photos_with_location,
                     COUNT(CASE WHEN description IS NOT NULL AND description != '' THEN 1 END) as photos_with_description,
                     COALESCE(SUM(file_size), 0) as total_size,
-                    MIN(COALESCE(taken_timestamp, upload_timestamp)) as first_photo_date,
-                    MAX(COALESCE(taken_timestamp, upload_timestamp)) as latest_photo_date
+                    MIN(COALESCE(
+                        STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(exif_data_json, '$.timestamp')), '%Y-%m-%dT%H:%i:%s.%fZ'),
+                        taken_timestamp,
+                        upload_timestamp
+                    )) as first_photo_date,
+                    MAX(COALESCE(
+                        STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(exif_data_json, '$.timestamp')), '%Y-%m-%dT%H:%i:%s.%fZ'),
+                        taken_timestamp,
+                        upload_timestamp
+                    )) as latest_photo_date
                 FROM photos
                 """
                 cursor.execute(stats_sql)
@@ -625,8 +711,16 @@ class MySQLClient:
                     COUNT(*) as photo_count,
                     AVG(latitude) as avg_latitude,
                     AVG(longitude) as avg_longitude,
-                    MIN(COALESCE(taken_timestamp, upload_timestamp)) as first_photo_date,
-                    MAX(COALESCE(taken_timestamp, upload_timestamp)) as latest_photo_date
+                    MIN(COALESCE(
+                        STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(exif_data_json, '$.timestamp')), '%Y-%m-%dT%H:%i:%s.%fZ'),
+                        taken_timestamp,
+                        upload_timestamp
+                    )) as first_photo_date,
+                    MAX(COALESCE(
+                        STR_TO_DATE(JSON_UNQUOTE(JSON_EXTRACT(exif_data_json, '$.timestamp')), '%Y-%m-%dT%H:%i:%s.%fZ'),
+                        taken_timestamp,
+                        upload_timestamp
+                    )) as latest_photo_date
                 FROM photos
                 WHERE latitude IS NOT NULL AND longitude IS NOT NULL
                 GROUP BY location_name

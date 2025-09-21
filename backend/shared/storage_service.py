@@ -300,6 +300,7 @@ class UnifiedStorageService:
     ) -> Dict[str, Any]:
         """
         사진 및 썸네일 업로드 (통합 인터페이스)
+        새로운 업로드 프로세스: 메타데이터 먼저 저장 → 파일 업로드 → 상태 업데이트
 
         Args:
             file_content: 원본 파일 내용
@@ -311,7 +312,35 @@ class UnifiedStorageService:
         Returns:
             Dict: 업로드 결과
         """
+        upload_result = {"success": False, "db_saved": False}
+
         try:
+            # 1단계: 메타데이터 먼저 저장 (상태: 'uploading')
+            if self.db_client and metadata:
+                print(f"💾 1단계: 메타데이터 먼저 저장 (상태: uploading)")
+
+                # GPS 정보가 손실되지 않도록 메타데이터에서 먼저 추출 및 저장
+                db_metadata = {**metadata}
+                db_metadata['upload_status'] = 'uploading'  # 업로드 중 상태로 설정
+
+                try:
+                    db_result = self.db_client.save_photo_metadata(db_metadata)
+                    if not db_result["success"]:
+                        return {
+                            "success": False,
+                            "error": f"메타데이터 저장 실패: {db_result.get('error')}",
+                            "stage": "metadata_save"
+                        }
+                    print(f"✅ 메타데이터 저장 성공: {photo_id}")
+                except Exception as e:
+                    return {
+                        "success": False,
+                        "error": f"메타데이터 저장 중 오류: {e}",
+                        "stage": "metadata_save"
+                    }
+
+            # 2단계: 파일 업로드 시작
+            print(f"📤 2단계: 파일 업로드 시작")
             results = {}
 
             # 원본 사진 업로드
@@ -324,9 +353,13 @@ class UnifiedStorageService:
             )
 
             if not original_result["success"]:
+                # 업로드 실패 시 상태를 'failed'로 업데이트
+                if self.db_client:
+                    self.db_client.update_upload_status(photo_id, 'failed')
                 return {
                     "success": False,
-                    "error": f"원본 파일 업로드 실패: {original_result['error']}"
+                    "error": f"원본 파일 업로드 실패: {original_result['error']}",
+                    "stage": "file_upload"
                 }
 
             results["original"] = original_result
@@ -384,6 +417,18 @@ class UnifiedStorageService:
                     else:
                         print(f"썸네일 {size} 업로드 실패: {thumbnail_result['error']}")
 
+            # 3단계: 업로드 성공 시 상태를 'completed'로 업데이트
+            print(f"✅ 3단계: 업로드 성공, 상태를 'completed'로 업데이트")
+            if self.db_client:
+                try:
+                    status_result = self.db_client.update_upload_status(photo_id, 'completed')
+                    if not status_result["success"]:
+                        print(f"⚠️ 상태 업데이트 실패: {status_result.get('error')}")
+                    else:
+                        print(f"✅ 업로드 상태 'completed'로 업데이트 완료")
+                except Exception as e:
+                    print(f"⚠️ 상태 업데이트 중 오류: {e}")
+
             # 업로드 결과
             upload_result = {
                 "success": True,
@@ -393,82 +438,60 @@ class UnifiedStorageService:
                 "thumbnail_urls": thumbnail_urls,
                 "file_size": len(file_content),
                 "storage_type": self.storage_type,
-                "upload_details": results
+                "upload_details": results,
+                "db_saved": True  # 메타데이터는 1단계에서 이미 저장됨
             }
-
-            # 데이터베이스에 메타데이터 저장
-            if self.db_client:
-                try:
-                    # MySQL 스키마에 맞게 데이터 변환
-                    location_data = metadata.get("location") if metadata else None
-                    exif_data = metadata.get("exif_data") if metadata else {}
-
-                    # 자동 지오코딩: 좌표가 있지만 지역명이 없는 경우
-                    if location_data and "latitude" in location_data and "longitude" in location_data:
-                        if not location_data.get("city") and not location_data.get("country"):
-                            print(f"🌍 자동 지오코딩 시도: ({location_data['latitude']}, {location_data['longitude']})")
-                            geocoded_info = self._geocode_coordinates(
-                                location_data["latitude"],
-                                location_data["longitude"]
-                            )
-                            if geocoded_info:
-                                location_data.update(geocoded_info)
-                                print(f"✅ 지오코딩 성공: {geocoded_info.get('city')}, {geocoded_info.get('country')}")
-
-                    db_data = {
-                        "id": photo_id,
-                        "filename": f"{photo_id}{file_extension}",
-                        "description": metadata.get("description", "") if metadata else "",
-                        "file_url": original_result["url"],
-                        "file_size": len(file_content),
-                        "content_type": f"image/{file_extension[1:]}",
-                        "upload_timestamp": get_current_timestamp(),
-
-                        # 개별 썸네일 URL 컬럼들
-                        "thumbnail_small": thumbnail_urls.get("small"),
-                        "thumbnail_medium": thumbnail_urls.get("medium"),
-                        "thumbnail_large": thumbnail_urls.get("large"),
-
-                        # 위치 정보 (개별 컬럼)
-                        "latitude": location_data.get("latitude") if location_data else None,
-                        "longitude": location_data.get("longitude") if location_data else None,
-                        "location_address": location_data.get("address") if location_data else None,
-                        "location_city": location_data.get("city") if location_data else None,
-                        "location_country": location_data.get("country") if location_data else None,
-
-                        # EXIF 정보 (개별 컬럼)
-                        "camera_make": exif_data.get("make") if exif_data else None,
-                        "camera_model": exif_data.get("model") if exif_data else None,
-                        "taken_timestamp": exif_data.get("datetime") if exif_data else None,
-                        "iso_speed": exif_data.get("iso") if exif_data else None,
-                        "aperture": exif_data.get("aperture") if exif_data else None,
-                        "shutter_speed": exif_data.get("shutter_speed") if exif_data else None,
-                        "focal_length": exif_data.get("focal_length") if exif_data else None,
-
-                        # JSON 컬럼들 (호환성을 위해)
-                        "thumbnail_urls": thumbnail_urls,
-                        "location": location_data,
-                        "exif_data": exif_data,
-                        "tags": metadata.get("tags", []) if metadata else []
-                    }
-
-                    db_result = self.db_client.save_photo_metadata(db_data)
-                    upload_result["db_saved"] = db_result["success"]
-
-                    if not db_result["success"]:
-                        print(f"데이터베이스 저장 실패: {db_result.get('error')}")
-
-                except Exception as e:
-                    print(f"데이터베이스 저장 중 오류: {e}")
-                    upload_result["db_saved"] = False
 
             return upload_result
 
         except Exception as e:
+            # 전체 업로드 실패 시 상태를 'failed'로 업데이트
+            if self.db_client:
+                try:
+                    self.db_client.update_upload_status(photo_id, 'failed')
+                    print(f"💥 업로드 실패, 상태를 'failed'로 업데이트: {photo_id}")
+                except Exception as status_error:
+                    print(f"⚠️ 실패 상태 업데이트 중 오류: {status_error}")
+
             return {
                 "success": False,
-                "error": f"사진 업로드 중 오류: {str(e)}"
+                "error": f"사진 업로드 중 오류: {str(e)}",
+                "stage": "general_error"
             }
+
+    def save_metadata_only(self, metadata: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        메타데이터만 먼저 저장 (GPS 정보 보존용)
+
+        Args:
+            metadata: 사진 메타데이터
+
+        Returns:
+            저장 결과
+        """
+        if not self.db_client:
+            return {"success": False, "error": "데이터베이스 클라이언트가 없습니다"}
+
+        # 업로드 상태를 'uploading'으로 설정
+        metadata_with_status = {**metadata}
+        metadata_with_status['upload_status'] = 'uploading'
+
+        return self.db_client.save_photo_metadata(metadata_with_status)
+
+    def cleanup_old_uploads(self, hours_old: int = 1) -> Dict[str, Any]:
+        """
+        오래된 미완료 업로드 정리
+
+        Args:
+            hours_old: 정리할 업로드 경과 시간 (시간 단위)
+
+        Returns:
+            정리 결과
+        """
+        if not self.db_client:
+            return {"success": False, "error": "데이터베이스 클라이언트가 없습니다"}
+
+        return self.db_client.cleanup_failed_uploads(hours_old)
 
     def _geocode_coordinates(self, latitude: float, longitude: float) -> Optional[Dict[str, str]]:
         """
